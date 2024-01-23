@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-azur-lane-assistant",
-  "description": "",
+  "description": "💠碧蓝航线小助手，功能包括：B站碧蓝航线官方动态推送、舰娘图鉴、装备图鉴、碧蓝井号榜等。",
   "version": "0.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -8,14 +8,45 @@
     "lib",
     "dist"
   ],
+  "koishi": {
+    "service": {
+      "required": [
+        "puppeteer"
+      ],
+      "optional": [
+        "markdownToImage"
+      ]
+    }
+  },
   "license": "MIT",
-  "scripts": {},
+  "author": "Nawyjx <3373167460@qq.com>",
+  "homepage": "https://www.npmjs.com/package/koishi-plugin-azur-lane-assistant?activeTab=readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/araea/koishi-plugin-azur-lane-assistant.git"
+  },
   "keywords": [
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "azur-lane",
+    "碧蓝航线",
+    "小助手",
+    "碧蓝航线百科",
+    "碧蓝航线小助手",
+    "动态推送",
+    "wiki",
+    "Azur Lane"
   ],
   "peerDependencies": {
     "koishi": "^4.16.6"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "koishi-plugin-markdown-to-image-service": "^1.0.4",
+    "koishi-plugin-puppeteer": "^3.7.3"
   }
 }
