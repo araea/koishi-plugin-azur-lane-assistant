@@ -885,6 +885,15 @@ export function apply(ctx: Context, config: Config) {
           if (shiptables.length > 0) {
             shiptables.last().remove();
           }
+          // 找到所有 role="presentation" 的 li 标签，将其属性设置为 active
+          $('li[role="presentation"]').each((index, element) => {
+            const li = $(element);
+            if (!li.hasClass('active')) {
+              li.addClass('active');
+            }
+          });
+          // 将所有具有 class="tab-pane" 的元素设置为 active
+          $('div.tab-pane').addClass('active');
           // 通过锚点文本删除指定的元素
           $('a[href="#装备导航"]').parent().remove();
           $('h2 span.mw-headline#装备导航').parent().remove(); // 删除包含特定类和ID的 h2 下的 span 元素
