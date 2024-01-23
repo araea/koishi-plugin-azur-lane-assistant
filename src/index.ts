@@ -889,6 +889,8 @@ export function apply(ctx: Context, config: Config) {
           $('a[href="#装备导航"]').parent().remove();
           $('h2 span.mw-headline#装备导航').parent().remove(); // 删除包含特定类和ID的 h2 下的 span 元素
           $('div.mw-parser-output').find('div.bread, div.bread span').remove(); // 删除指定的两个网页元素
+          // 选择所有带有 class="heimu" 的元素，并移除它们的 class 属性
+          $('span.heimu').removeAttr('class');
           // 查找并添加链接的前缀
           $('a[href^="/blhx"]').each((index, element) => {
             const href = $(element).attr('href');
