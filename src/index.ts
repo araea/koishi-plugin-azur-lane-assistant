@@ -17,7 +17,7 @@ export const usage = `## 🌈 使用
 
 - 需要确保先启动 Puppeteer 服务以正常运行插件。
 
-- 如需启用官方动态推送功能，需要提供您的哔哩哔哩 Cookie 中的 buvid3 值（需登录获取 - [获取教程](https://forum.koishi.xyz/t/topic/6427/10)）。
+- 如需启用官方动态推送功能，需要提供您的哔哩哔哩 Cookie 中的 buvid3 值（需登录获取 - [获取教程](https://forum.koishi.xyz/t/topic/6427/11)）。
 
 - 建议为常用命令自行设置别名以便使用。
 
