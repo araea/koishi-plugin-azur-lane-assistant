@@ -1,7 +1,6 @@
 import {Context, h, Schema} from 'koishi'
 
 import https from "https";
-import * as fs from "fs";
 import {} from 'koishi-plugin-puppeteer'
 import {} from 'koishi-plugin-markdown-to-image-service'
 
