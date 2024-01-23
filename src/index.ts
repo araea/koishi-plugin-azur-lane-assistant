@@ -802,10 +802,10 @@ export function apply(ctx: Context, config: Config) {
               const html = generateTable(tableRows);
               await page.setContent(html, {waitUntil: 'load'});
               const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
-              fs.writeFile('equipmentsList.png', imgBuffer, (err) => {
-                if (err) throw err;
-                logger.success('equipmentsList.png 文件已保存');
-              });
+              // fs.writeFile('equipmentsList.png', imgBuffer, (err) => {
+              //   if (err) throw err;
+              //   logger.success('equipmentsList.png 文件已保存');
+              // });
               await session.send(h.image(imgBuffer, `image/${imageType}`));
               tableRows = [];
             }

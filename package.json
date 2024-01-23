@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-azur-lane-assistant",
   "description": "💠碧蓝航线小助手\uD83D\uDCA0\n\uD83D\uDCA0B站碧蓝航线官方动态推送\uD83D\uDCA0舰娘图鉴\uD83D\uDCA0装备图鉴\uD83D\uDCA0碧蓝井号榜\uD83D\uDCA0",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
