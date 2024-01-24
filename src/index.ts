@@ -508,6 +508,7 @@ export function apply(ctx: Context, config: Config) {
           });
           // 找到所有非 active 的 <li class="tab_li"> 标签并设置为 active
           $('.TabContainer .tab_li:not(.active)').addClass('active');
+          $('.TabContainer .tab_con:not(.active)').addClass('active');
           // 删除所有包含 sm-bar 类的元素
           $('div.sm-bar').remove();
           $('span.badge.pull-right').remove(); // 删除指定的网页元素
