@@ -224,9 +224,19 @@ export function apply(ctx: Context, config: Config) {
 
     startRequest();
 
-    process.on('exit', () => {
-      stopRequest();
-    });
+    const exitListener = () => stopRequest();
+
+    if (process.listenerCount('exit') === 0) {
+      process.on('exit', exitListener);
+    }
+
+    if (process.listenerCount('SIGINT') === 0) {
+      process.on('SIGINT', exitListener);
+    }
+
+    if (process.listenerCount('SIGTERM') === 0) {
+      process.on('SIGTERM', exitListener);
+    }
 
     ctx.on('dispose', () => {
       stopRequest();
