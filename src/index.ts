@@ -6,6 +6,7 @@ import {} from 'koishi-plugin-markdown-to-image-service'
 
 import {load} from "cheerio";
 import iconv from "iconv-lite";
+import * as fs from "fs";
 
 export const inject = {
   required: ['puppeteer'],
@@ -38,6 +39,7 @@ export interface Config {
   defaultShipGirlsListBatchCount: number
   defaultEquipmentsListBatchCount: number
   defaultRanksListBatchCount: number
+  defaultStagesListBatchCount: number
   imageType: "png" | "jpeg" | "webp"
   isBilibiliAzurLaneOfficialDynamicPushEnabled: boolean
   buvid3: string
@@ -54,6 +56,7 @@ export const Config: Schema<Config> = Schema.intersect([
     defaultShipGirlsListBatchCount: Schema.number().min(1).max(10).default(5).description(`发送舰娘列表的默认批次数，最大值为 \`10\`。`),
     defaultEquipmentsListBatchCount: Schema.number().min(1).max(10).default(5).description(`发送装备列表的默认批次数，最大值为 \`10\`。`),
     defaultRanksListBatchCount: Schema.number().min(1).max(5).default(1).description(`发送井号碧蓝榜列表的默认批次数，最大值为 \`5\`。`),
+    defaultStagesListBatchCount: Schema.number().min(1).max(10).default(5).description(`发送关卡列表的默认批次数，最大值为 \`10\`。`),
     // isConsolePromptEnabled: Schema.boolean().default(true).description('是否在控制台打印提示信息。'),
     imageType: Schema.union(['png', 'jpeg', 'webp']).default('png').description(`发送的图片类型。`),
     isBilibiliAzurLaneOfficialDynamicPushEnabled: Schema.boolean().default(false).description('是否启用哔哩哔哩碧蓝航线官方的动态推送功能。'),
@@ -79,6 +82,7 @@ export function apply(ctx: Context, config: Config) {
     defaultShipGirlsListBatchCount,
     defaultEquipmentsListBatchCount,
     defaultRanksListBatchCount,
+    defaultStagesListBatchCount,
     // isConsolePromptEnabled,
     imageType,
     isBilibiliAzurLaneOfficialDynamicPushEnabled,
@@ -116,6 +120,473 @@ export function apply(ctx: Context, config: Config) {
   }
 
   let ranks: Rank[] = [];
+
+  interface Stage {
+    title: string;
+    name: string;
+    href: string;
+    img: string;
+    altName: string;
+  }
+
+  let stages: Stage[] = [];
+
+  interface mainlineStage {
+    stageNumber: string
+    stageName: string
+  }
+
+  const manlineStages: mainlineStage[] = [
+    {
+      "stageNumber": "1-1",
+      "stageName": "近海演习"
+    },
+    {
+      "stageNumber": "1-1Hard",
+      "stageName": "近海演习（困难）"
+    },
+    {
+      "stageNumber": "1-2",
+      "stageName": "虎！虎！虎！"
+    },
+    {
+      "stageNumber": "1-2Hard",
+      "stageName": "虎！虎！虎！（困难）"
+    },
+    {
+      "stageNumber": "1-3",
+      "stageName": "燃烧的军港"
+    },
+    {
+      "stageNumber": "1-3Hard",
+      "stageName": "燃烧的军港（困难）"
+    },
+    {
+      "stageNumber": "1-4",
+      "stageName": "来自东方的舰队"
+    },
+    {
+      "stageNumber": "1-4Hard",
+      "stageName": "来自东方的舰队（困难）"
+    },
+    {
+      "stageNumber": "2-1",
+      "stageName": "支援图拉岛"
+    },
+    {
+      "stageNumber": "2-1Hard",
+      "stageName": "支援图拉岛（困难）"
+    },
+    {
+      "stageNumber": "2-2",
+      "stageName": "乌云蔽日"
+    },
+    {
+      "stageNumber": "2-2Hard",
+      "stageName": "乌云蔽日（困难）"
+    },
+    {
+      "stageNumber": "2-3",
+      "stageName": "珊瑚海的首秀"
+    },
+    {
+      "stageNumber": "2-3Hard",
+      "stageName": "珊瑚海的首秀（困难）"
+    },
+    {
+      "stageNumber": "2-4",
+      "stageName": "救援约克城"
+    },
+    {
+      "stageNumber": "2-4Hard",
+      "stageName": "救援约克城（困难）"
+    },
+    {
+      "stageNumber": "3-1",
+      "stageName": "决战中途岛！"
+    },
+    {
+      "stageNumber": "3-1Hard",
+      "stageName": "决战中途岛！（困难）"
+    },
+    {
+      "stageNumber": "3-2",
+      "stageName": "命运的五分钟"
+    },
+    {
+      "stageNumber": "3-2Hard",
+      "stageName": "命运的五分钟（困难）"
+    },
+    {
+      "stageNumber": "3-3",
+      "stageName": "背水一战"
+    },
+    {
+      "stageNumber": "3-3Hard",
+      "stageName": "背水一战（困难）"
+    },
+    {
+      "stageNumber": "3-4",
+      "stageName": "最后的反击"
+    },
+    {
+      "stageNumber": "3-4Hard",
+      "stageName": "最后的反击（困难）"
+    },
+    {
+      "stageNumber": "4-1",
+      "stageName": "午夜惊魂"
+    },
+    {
+      "stageNumber": "4-1Hard",
+      "stageName": "午夜惊魂（困难）"
+    },
+    {
+      "stageNumber": "4-2",
+      "stageName": "血色黎明"
+    },
+    {
+      "stageNumber": "4-2Hard",
+      "stageName": "血色黎明（困难）"
+    },
+    {
+      "stageNumber": "4-3",
+      "stageName": "东所罗门遭遇战"
+    },
+    {
+      "stageNumber": "4-3Hard",
+      "stageName": "东所罗门遭遇战（困难）"
+    },
+    {
+      "stageNumber": "4-4",
+      "stageName": "复仇之战"
+    },
+    {
+      "stageNumber": "4-4Hard",
+      "stageName": "复仇之战（困难）"
+    },
+    {
+      "stageNumber": "5-1",
+      "stageName": "物资拦截战"
+    },
+    {
+      "stageNumber": "5-1Hard",
+      "stageName": "物资拦截战（困难）"
+    },
+    {
+      "stageNumber": "5-2",
+      "stageName": "圣克鲁斯的天空"
+    },
+    {
+      "stageNumber": "5-2Hard",
+      "stageName": "圣克鲁斯的天空（困难）"
+    },
+    {
+      "stageNumber": "5-3",
+      "stageName": "大黄蜂的陨落"
+    },
+    {
+      "stageNumber": "5-3Hard",
+      "stageName": "大黄蜂的陨落（困难）"
+    },
+    {
+      "stageNumber": "5-4",
+      "stageName": "撤离战区"
+    },
+    {
+      "stageNumber": "5-4Hard",
+      "stageName": "撤离战区（困难）"
+    },
+    {
+      "stageNumber": "6-1",
+      "stageName": "夜战精英"
+    },
+    {
+      "stageNumber": "6-1Hard",
+      "stageName": "夜战精英（困难）"
+    },
+    {
+      "stageNumber": "6-2",
+      "stageName": "反攻"
+    },
+    {
+      "stageNumber": "6-2Hard",
+      "stageName": "反攻（困难）"
+    },
+    {
+      "stageNumber": "6-3",
+      "stageName": "巨炮最后的对决"
+    },
+    {
+      "stageNumber": "6-3Hard",
+      "stageName": "巨炮最后的对决（困难）"
+    },
+    {
+      "stageNumber": "6-4",
+      "stageName": "所罗门的噩梦"
+    },
+    {
+      "stageNumber": "6-4Hard",
+      "stageName": "所罗门的噩梦（困难）"
+    },
+    {
+      "stageNumber": "7-1",
+      "stageName": "增援拦截"
+    },
+    {
+      "stageNumber": "7-1Hard",
+      "stageName": "增援拦截（困难）"
+    },
+    {
+      "stageNumber": "7-2",
+      "stageName": "短兵相接"
+    },
+    {
+      "stageNumber": "7-2Hard",
+      "stageName": "短兵相接（困难）"
+    },
+    {
+      "stageNumber": "7-3",
+      "stageName": "措手不及"
+    },
+    {
+      "stageNumber": "7-3Hard",
+      "stageName": "措手不及（困难）"
+    },
+    {
+      "stageNumber": "7-4",
+      "stageName": "预料外的混乱"
+    },
+    {
+      "stageNumber": "7-4Hard",
+      "stageName": "预料外的混乱（困难）"
+    },
+    {
+      "stageNumber": "8-1",
+      "stageName": "寒风"
+    },
+    {
+      "stageNumber": "8-1Hard",
+      "stageName": "寒风（困难）"
+    },
+    {
+      "stageNumber": "8-2",
+      "stageName": "北极圈的拂晓"
+    },
+    {
+      "stageNumber": "8-2Hard",
+      "stageName": "北极圈的拂晓（困难）"
+    },
+    {
+      "stageNumber": "8-3",
+      "stageName": "冰海怒涛"
+    },
+    {
+      "stageNumber": "8-3Hard",
+      "stageName": "冰海怒涛（困难）"
+    },
+    {
+      "stageNumber": "8-4",
+      "stageName": "被遗忘的战场"
+    },
+    {
+      "stageNumber": "8-4Hard",
+      "stageName": "被遗忘的战场（困难）"
+    },
+    {
+      "stageNumber": "9-1",
+      "stageName": "不祥之夜"
+    },
+    {
+      "stageNumber": "9-1Hard",
+      "stageName": "不祥之夜（困难）"
+    },
+    {
+      "stageNumber": "9-2",
+      "stageName": "拦截作战"
+    },
+    {
+      "stageNumber": "9-2Hard",
+      "stageName": "拦截作战（困难）"
+    },
+    {
+      "stageNumber": "9-3",
+      "stageName": "黑夜中的光芒"
+    },
+    {
+      "stageNumber": "9-3Hard",
+      "stageName": "黑夜中的光芒（困难）"
+    },
+    {
+      "stageNumber": "9-4",
+      "stageName": "海伦娜"
+    },
+    {
+      "stageNumber": "9-4Hard",
+      "stageName": "海伦娜（困难）"
+    },
+    {
+      "stageNumber": "10-1",
+      "stageName": "再次出击，再次！"
+    },
+    {
+      "stageNumber": "10-1Hard",
+      "stageName": "再次出击，再次！（困难）"
+    },
+    {
+      "stageNumber": "10-2",
+      "stageName": "先发制人"
+    },
+    {
+      "stageNumber": "10-2Hard",
+      "stageName": "先发制人（困难）"
+    },
+    {
+      "stageNumber": "10-3",
+      "stageName": "乘胜追击"
+    },
+    {
+      "stageNumber": "10-3Hard",
+      "stageName": "乘胜追击（困难）"
+    },
+    {
+      "stageNumber": "10-4",
+      "stageName": "回马枪"
+    },
+    {
+      "stageNumber": "10-4Hard",
+      "stageName": "回马枪（困难）"
+    },
+    {
+      "stageNumber": "11-1",
+      "stageName": "拂晓登陆！"
+    },
+    {
+      "stageNumber": "11-1Hard",
+      "stageName": "拂晓登陆！（困难）"
+    },
+    {
+      "stageNumber": "11-2",
+      "stageName": "暴风雨之夜"
+    },
+    {
+      "stageNumber": "11-2Hard",
+      "stageName": "暴风雨之夜（困难）"
+    },
+    {
+      "stageNumber": "11-3",
+      "stageName": "所罗门四骑士"
+    },
+    {
+      "stageNumber": "11-3Hard",
+      "stageName": "所罗门四骑士（困难）"
+    },
+    {
+      "stageNumber": "11-4",
+      "stageName": "撕裂黑夜！"
+    },
+    {
+      "stageNumber": "11-4Hard",
+      "stageName": "撕裂黑夜！（困难）"
+    },
+    {
+      "stageNumber": "12-1",
+      "stageName": "先声夺人"
+    },
+    {
+      "stageNumber": "12-1Hard",
+      "stageName": "先声夺人（困难）"
+    },
+    {
+      "stageNumber": "12-2",
+      "stageName": "鲁莽的后果"
+    },
+    {
+      "stageNumber": "12-2Hard",
+      "stageName": "鲁莽的后果（困难）"
+    },
+    {
+      "stageNumber": "12-3",
+      "stageName": "空中对决"
+    },
+    {
+      "stageNumber": "12-3Hard",
+      "stageName": "空中对决（困难）"
+    },
+    {
+      "stageNumber": "12-4",
+      "stageName": "TF58，翱翔于天际"
+    },
+    {
+      "stageNumber": "12-4Hard",
+      "stageName": "TF58，翱翔于天际（困难）"
+    },
+    {
+      "stageNumber": "13-1",
+      "stageName": "激战的长空"
+    },
+    {
+      "stageNumber": "13-1Hard",
+      "stageName": "激战的长空（困难）"
+    },
+    {
+      "stageNumber": "13-2",
+      "stageName": "羽栖之鹤"
+    },
+    {
+      "stageNumber": "13-2Hard",
+      "stageName": "羽栖之鹤（困难）"
+    },
+    {
+      "stageNumber": "13-3",
+      "stageName": "奋起之鹤"
+    },
+    {
+      "stageNumber": "13-3Hard",
+      "stageName": "奋起之鹤（困难）"
+    },
+    {
+      "stageNumber": "13-4",
+      "stageName": "起舞之凤"
+    },
+    {
+      "stageNumber": "13-4Hard",
+      "stageName": "起舞之凤（困难）"
+    },
+    {
+      "stageNumber": "14-1",
+      "stageName": "夜间遭遇"
+    },
+    {
+      "stageNumber": "14-2",
+      "stageName": "T字对决"
+    },
+    {
+      "stageNumber": "14-3",
+      "stageName": "缠斗"
+    },
+    {
+      "stageNumber": "14-4",
+      "stageName": "晨曦下的追击"
+    },
+    {
+      "stageNumber": "15-1",
+      "stageName": "破晓突袭"
+    },
+    {
+      "stageNumber": "15-2",
+      "stageName": "胜券在握"
+    },
+    {
+      "stageNumber": "15-3",
+      "stageName": "紧急求援"
+    },
+    {
+      "stageNumber": "15-4",
+      "stageName": "笼中之鹤"
+    },
+  ];
+
 
   // 哔哩哔哩 碧蓝航线官方动态推送 ts* jt*
   if (isBilibiliAzurLaneOfficialDynamicPushEnabled) {
@@ -251,6 +722,7 @@ export function apply(ctx: Context, config: Config) {
     .action(async ({session}) => {
       await session.execute(`azurLaneAssistant.舰娘 -h`)
     })
+
   // 舰娘.列表* jnlb*
   ctx.command('azurLaneAssistant.舰娘.列表 [batchCount:number]', '查看舰娘列表')
     .option('initialize', '-i 初始化舰娘列表')
@@ -1211,6 +1683,716 @@ export function apply(ctx: Context, config: Config) {
       }
 
       await session.send(h.image(selecteRank.src))
+      //
+    });
+
+  // 关卡* gq*
+  ctx.command('azurLaneAssistant.关卡', '查看关卡指令帮助')
+    .action(async ({session}) => {
+      await session.execute(`azurLaneAssistant.关卡 -h`)
+    })
+
+  // 关卡.总览.列表* gqzllb*
+  ctx.command('azurLaneAssistant.关卡.总览.列表 [batchCount:number]', '查看关卡总览列表')
+    .option('initialize', '-i 初始化关卡列表')
+    .action(async ({session, options}, batchCount = defaultStagesListBatchCount) => {
+      if (isNaN(batchCount) || batchCount <= 0) {
+        return '批次数必须是一个大于 0 的数字！';
+      }
+      if (batchCount > 10) return `批次数超出范围，最大值为 10。`
+      // 请求链接
+      const url = 'https://wiki.biligame.com/blhx/%E7%AB%A0%E8%8A%82%E5%85%B3%E5%8D%A1';
+
+      // 发送HTTPS请求
+      https.get(url, (response) => {
+        let chunks = [];
+
+        // 接收数据
+        response.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+
+        // 接收完数据后，解析网页信息
+        response.on('end', async () => {
+          const buffer = Buffer.concat(chunks);
+          const data = iconv.decode(buffer, 'utf-8');
+          const $ = load(data);
+          let newStages: Stage[] = []
+          // 查找并添加链接的前缀
+          $('a[href^="/blhx"]').each((index, element) => {
+            const href = $(element).attr('href');
+            if (href) {
+              $(element).attr('href', `https://wiki.biligame.com${href}`);
+            }
+          });
+          // 在网页元素 <div class="mw-parser-output"> 中，遍历每一个 table，提取所需元素添加到一个对象数组中
+          $('div.mw-parser-output table').each((index, table) => {
+            const title = $(table).find('a[title]').attr('title');
+            const name = title.replace(/#.*/, '')
+            const href = $(table).find('a[title]').attr('href');
+            // const img = $(table).find('img').attr('src');
+            const img = $(table).find('img').prop('outerHTML'); // 获取整个 <img> 标签的字符串形式
+            const alt = $(table).find("img").attr("alt") || "";
+            const altName = alt.substring(0, alt.lastIndexOf(".")) || alt; // 提取文件名部分，不包括后缀
+
+            if (title && href && img) {
+              newStages.push({title, name, href, img, altName});
+            }
+          });
+          if (newStages !== stages) stages = newStages
+          // logger.log(stages); // 输出对象数组
+          // fs.writeFile('shipGirls.json',  JSON.stringify(shipGirls), (err) => {
+          //   if (err) throw err;
+          //   logger.success('文件已保存');
+          // });
+          const stagesLength = stages.length;
+          const batchSize = Math.floor(stagesLength / batchCount); // 每批处理的数量
+          let serialNumber = 1; // 序号变量
+          let tableRows = [];
+
+          const tableStyle = `
+    <style>
+        body {
+            margin: 0;
+            zoom: 200%;
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+            overflow: scroll;
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            height: min-content;
+            border: 1px solid #ddd;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-right: 5px;
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f5f5f5;
+        }
+
+        .line1 {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: max-content;
+        }
+
+        .name {
+            color: #444444;
+            margin-left: 5px;
+        }
+
+        .tags {
+            color: #6c757d;
+            font-size: xx-small;
+            margin-left: 0;
+        }
+    </style>
+    `;
+
+          const generateTable = (rows: any): string => {
+            return `
+        <html lang="zh">
+          <head>
+            ${tableStyle}
+          <title>关卡列表</title></head>
+          <body>
+            <div class="list">
+              <table>
+                ${rows.join('\n')}
+              </table>
+            </div>
+          </body>
+        </html>
+      `;
+          };
+
+          const page = await ctx.puppeteer.page();
+          await page.setViewport({width: 100, height: 100});
+
+          for (let i = 1; i <= stagesLength; i++) {
+            const stage = stages[i - 1];
+            const row = `
+        <tr>
+            <td>
+                <div class="line1">
+                    <div class="avatar">
+                        ${stage.img}
+                    </div>
+                    <div class="name">${serialNumber++}. ${stage.altName}</div>
+                </div>
+                <div class="line2">
+                    <div class="tags">${stage.name}</div>
+                </div>
+            </td>
+        </tr>
+      `;
+            tableRows.push(row);
+
+            if ((i % batchSize === 0 || i === stagesLength) && !options.initialize) {
+              const html = generateTable(tableRows);
+              await page.setContent(html, {waitUntil: 'load'});
+              const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
+              // fs.writeFile('result3.png', imgBuffer, (err) => {
+              //   if (err) throw err;
+              //   logger.success('文件已保存');
+              // });
+              await session.send(h.image(imgBuffer, `image/${imageType}`));
+              tableRows = [];
+            }
+          }
+          if (options.initialize) logger.success(`关卡总览列表初始化成功！`)
+          await page.close();
+        });
+
+      }).on("error", (error) => {
+        logger.error("请求出错：", error.message);
+      });
+
+      //
+    })
+    .execute({options: {initialize: true}})
+
+  // 关卡.总览.查询* gqzlcx*
+  ctx.command('azurLaneAssistant.关卡.总览.查询 [indexOrName:text]', '查询关卡总览信息')
+    .action(async ({session}, indexOrName) => {
+      if (!indexOrName) {
+        await session.send(`请输入待查询的【关卡名】或【序号】或【取消】：`);
+        const userInput = await session.prompt();
+        if (!userInput) return `输入超时。`;
+        if (userInput === '取消') return `本次查询已取消。`;
+        indexOrName = userInput;
+      }
+      let selectedStage: Stage;
+      if (!isNaN(Number(indexOrName))) {
+        const index = parseInt(indexOrName);
+        if (index > 0 && index <= stages.length) {
+          selectedStage = stages[index - 1];
+        } else {
+          return `序号超出范围。`;
+        }
+      } else {
+        selectedStage = stages.find((stage) => stage.altName === indexOrName);
+        if (!selectedStage) selectedStage = stages.find((stage) => stage.title === indexOrName);
+        if (!selectedStage) selectedStage = stages.find((stage) => stage.name === indexOrName);
+        if (!selectedStage) {
+          return `未找到关卡。`;
+        }
+      }
+
+      const url = `https://wiki.biligame.com/blhx/${selectedStage.title}`;
+      https.get(url, (res) => {
+        let chunks = [];
+        res.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+        res.on('end', async () => {
+          const buffer = Buffer.concat(chunks);
+          const data = iconv.decode(buffer, 'utf-8');
+          // fs.writeFile('originalHtml.html', data, (err) => {
+          //   if (err) {
+          //     return logger.error(err);
+          //   }
+          //   logger.success('originalHtml.html 已保存。');
+          // });
+          const $ = load(data);
+
+          // 删除第一个和第二个指定样式的 div 元素
+          $('div[style="width:100%;border-radius: 8px;border: 1px solid #D1D1D1;padding: 10px;margin: 2px 0px;font-size:18px"]').remove();
+
+          // 删除 class 为 mwiki_hide 的 div 元素
+          $('div.mwiki_hide').remove();
+          // 删除指定的长 ul-dl-ul 嵌套元素
+          $('ul>li>dl>dt').parent().nextUntil('div.dbxx').remove();
+          // 选择指定的 ul-li-dl 元素
+          const target = $("dt:contains('还可以查看以下分类文章页面')").parent();
+          // 删除该元素
+          target.remove();
+          // 删除 class 为 dbxx 的 div 元素
+          $('div.dbxx').remove();
+          // 删除表格中的 max-height 属性
+          $('div[style*="max-height"]').removeAttr('style');
+          // 将所有具有 class="tab-pane" 的元素设置为 active
+          $('div.tab-pane').addClass('active');
+          // 找到所有 role="presentation" 的 li 标签，将其属性设置为 active
+          $('li[role="presentation"]').each((index, element) => {
+            const li = $(element);
+            if (!li.hasClass('active')) {
+              li.addClass('active');
+            }
+          });
+          // 找到所有非 active 的 <li class="tab_li"> 标签并设置为 active
+          $('.TabContainer .tab_li:not(.active)').addClass('active');
+          $('.TabContainer .tab_con:not(.active)').addClass('active');
+          // 删除所有包含 sm-bar 类的元素
+          $('div.sm-bar').remove();
+          $('span.badge.pull-right').remove(); // 删除指定的网页元素
+          $('div.mw-references-wrap').remove(); // 删除 <div class="mw-references-wrap"> 标签
+          // 删除最后一个 <div class="panel panel-shiptable"> 标签
+          const shiptables = $('div.panel.panel-shiptable');
+          if (shiptables.length > 0) {
+            shiptables.last().remove();
+          }
+          // 通过锚点文本删除指定的元素
+          $('a[href="#章节关卡"]').parent().remove();
+          $('h2 span.mw-headline#章节关卡').parent().remove(); // 删除包含特定类和ID的 h2 下的 span 元素
+          $('h3 span.mw-headline#常规关卡').parent().remove(); // 删除包含特定类和ID的 h3 下的 span 元素
+          $('h3 span.mw-headline#大型活动关卡E\\.X\\.').parent().remove(); // 删除包含特定类和ID的 h3 下的 span 元素
+          $('h3 span.mw-headline#小型活动关卡S\\.P\\.').parent().remove(); // 删除包含特定类和ID的 h3 下的 span 元素 // 小型活动关卡S.P.
+          $('h3 span.mw-headline#特殊活动关卡T').parent().remove(); // 删除包含特定类和ID的 h3 下的 span 元素
+          $('h4 span.mw-headline#常规关卡列表').parent().remove(); // 删除包含特定类和ID的 h4 下的 span 元素
+          $('h4 span.mw-headline#困难难度常规关卡').parent().remove(); // 删除包含特定类和ID的 h4 下的 span 元素
+          $('div.bread.mwiki_hide, div.bread span.mwiki_hide').remove(); // 删除指定的两个网页元素
+          $('div.mw-parser-output').find('div.bread, div.bread span').remove(); // 删除指定的两个网页元素
+          // 选择所有带有 class="heimu" 的元素，并移除它们的 class 属性
+          $('span.heimu').removeAttr('class');
+          $('.alert.alert-info[role="alert"]').remove();
+          $('.alert.alert-danger').remove();
+          $('dl dd').remove();
+          $('table[style="float:left;margin:5px;text-align:center;"]').remove();
+          // 查找所有空的标签并删除它们
+          // $('p, dl, div').each((index, element) => {
+          //   if ($(element).text().trim() === '') {
+          //     $(element).remove();
+          //   }
+          // });
+          // 查找并添加链接的前缀
+          $('a[href^="/blhx"]').each((index, element) => {
+            const href = $(element).attr('href');
+            if (href) {
+              $(element).attr('href', `https://wiki.biligame.com${href}`);
+            }
+          });
+          const mwParserOutputContent = $('div.mw-parser-output').html(); // 获取指定标签的内容
+          if (mwParserOutputContent) {
+            // logger.success(mwParserOutputContent);
+
+            const html = `
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/bootstrap.min.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/rank-buddle.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/vector.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/styles.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/toapp-buddle.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/pluginsCommon-buddle.css?version=76"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
+<meta name="renderer" content="webkit"/>
+<!DOCTYPE html>
+<html class="client-nojs" lang="zh-Hans-CN" dir="ltr">
+<head>
+    <meta charset="UTF-8"/>
+    <title>关卡攻略</title>
+    <style>
+    .ship_word_line, th {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    </style>
+
+    <link rel="stylesheet"
+        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.MobileDetect.nomobile%7Cext.visualEditor.desktopArticleTarget.noscript%7Cmediawiki.page.gallery.styles%7Cskins.vector.styles.legacy&amp;only=styles&amp;skin=vector"/>
+    <link rel="stylesheet"
+        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.smw.style%7Cext.smw.tooltip.styles&amp;only=styles&amp;skin=vector"/>
+    <link rel="stylesheet"
+        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.srf.styles&amp;only=styles&amp;skin=vector"/>
+    <link rel="stylesheet"
+        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=site.styles&amp;only=styles&amp;skin=vector"/>
+</head>
+<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-${selectedStage.name} rootpage-${selectedStage.name} skin-vector action-view skin-vector-legacy">
+<div class="game-bg container">
+
+    <div id="content" class="container mw-body" role="main">
+        <div id="bodyContent" class="mw-body-content">
+            <div id="mw-content-text" class="mw-body-content mw-content-ltr" lang="zh-Hans-CN" dir="ltr">
+                <div class="mw-parser-output">
+                    ${mwParserOutputContent}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+`
+
+            // fs.writeFile('stageHtml.html', html, (err) => {
+            //   if (err) {
+            //     return logger.error(err);
+            //   }
+            //   logger.success('关卡信息已保存到 stageHtml.html');
+            // });
+
+            const page = await ctx.puppeteer.page();
+
+            await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
+
+            await page.setContent(html, {waitUntil: 'networkidle2'});
+            // await ctx.sleep(6 * 1000)
+            // const element = await page.$('.mw-parser-output');
+            // const boundingBox = await element.boundingBox();
+            // const imgBuffer = await page.screenshot({clip: boundingBox, type: imageType});
+            // 自适应页面高度
+            // await page.evaluate(() => {
+            //   document.body.style.height = document.documentElement.scrollHeight + 'px';
+            // });
+            // 获取实际内容高度
+            // const bodyHandle = await page.$('body');
+            // const { height } = await bodyHandle.boundingBox();
+            // await bodyHandle.dispose();
+
+            // 重新设置页面高度
+            // await page.setViewport({ width: 1280, height: height, deviceScaleFactor: 1 });
+            const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
+
+            await page.close();
+            await session.send(h.image(imgBuffer, `image/${imageType}`))
+            // fs.writeFile(`stageImage.${imageType}`, imgBuffer, (err) => {
+            //   if (err) throw err;
+            //   logger.success(`stageImage.${imageType} 文件已保存。`);
+            // });
+          } else {
+            logger.error('未找到指定内容');
+          }
+        });
+      }).on('error', (err) => {
+        logger.error('请求失败：', err.message);
+      });
+      //
+    });
+
+  // 关卡.主线.列表* gqzxlb*
+  ctx.command('azurLaneAssistant.关卡.主线.列表 [batchCount:number]', '查看主线关卡列表')
+    .option('initialize', '-i 初始化关卡列表')
+    .action(async ({session, options}, batchCount = defaultStagesListBatchCount) => {
+      if (isNaN(batchCount) || batchCount <= 0) {
+        return '批次数必须是一个大于 0 的数字！';
+      }
+      if (batchCount > 10) return `批次数超出范围，最大值为 10。`
+
+      const manlineStagesLength = manlineStages.length;
+      const batchSize = Math.floor(manlineStagesLength / batchCount); // 每批处理的数量
+      let serialNumber = 1; // 序号变量
+      let tableRows = [];
+
+      const tableStyle = `
+    <style>
+        body {
+            margin: 0;
+            zoom: 200%;
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+            overflow: scroll;
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            height: min-content;
+            border: 1px solid #ddd;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-right: 5px;
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f5f5f5;
+        }
+
+        .line1 {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: max-content;
+        }
+
+        .id {
+          color: #444444;
+          font-size: x-small;
+          background-color: #f8f8f8;
+          padding: 1px 3px;
+          border-radius: 5px;
+          border-color: #dee2e6;
+          border-style: solid;
+          border-width: 1px;
+          margin-left: 5px;
+        }
+
+        .name {
+            color: #444444;
+            margin-left: 5px;
+        }
+
+        .tags {
+            color: #6c757d;
+            font-size: xx-small;
+            margin-left: 0;
+        }
+    </style>
+    `;
+
+      const generateTable = (rows: any): string => {
+        return `
+        <html lang="zh">
+          <head>
+            ${tableStyle}
+          <title>关卡列表</title></head>
+          <body>
+            <div class="list">
+              <table>
+                ${rows.join('\n')}
+              </table>
+            </div>
+          </body>
+        </html>
+      `;
+      };
+
+      const page = await ctx.puppeteer.page();
+      await page.setViewport({width: 100, height: 100});
+
+      for (let i = 1; i <= manlineStagesLength; i++) {
+        const manlineStage = manlineStages[i - 1];
+        const row = `
+        <tr>
+            <td>
+                <div class="line1">
+                    <div class="id">${manlineStage.stageNumber}</div>
+                    <div class="name">${serialNumber++}. ${manlineStage.stageName}</div>
+                </div>
+                <div class="line2">
+                    <div class="tags"></div>
+                </div>
+            </td>
+        </tr>
+      `;
+        tableRows.push(row);
+
+        if ((i % batchSize === 0 || i === manlineStagesLength) && !options.initialize) {
+          const html = generateTable(tableRows);
+          await page.setContent(html, {waitUntil: 'load'});
+          const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
+          // fs.writeFile('result3.png', imgBuffer, (err) => {
+          //   if (err) throw err;
+          //   logger.success('文件已保存');
+          // });
+          await session.send(h.image(imgBuffer, `image/${imageType}`));
+          tableRows = [];
+        }
+      }
+      if (options.initialize) logger.success(`主线关卡列表初始化成功！`)
+      await page.close();
+
+      //
+    })
+    .execute({options: {initialize: true}})
+
+  // 关卡.主线.查询* gqzxcx*
+  ctx.command('azurLaneAssistant.关卡.主线.查询 [indexOrName:text]', '查询主线关卡信息')
+    .action(async ({session}, indexOrName) => {
+      if (!indexOrName) {
+        await session.send(`请输入待查询的【关卡名】
+或【关卡号（例如1-1、1-1Hard）】
+或【取消】：`);
+        const userInput = await session.prompt();
+        if (!userInput) return `输入超时。`;
+        if (userInput === '取消') return `本次查询已取消。`;
+        indexOrName = userInput;
+      }
+      let selectedMainlineStage: mainlineStage;
+      if (!isNaN(Number(indexOrName))) {
+        const index = parseInt(indexOrName);
+        if (index > 0 && index <= manlineStages.length) {
+          selectedMainlineStage = manlineStages[index - 1];
+        } else {
+          return `序号超出范围。`;
+        }
+      } else {
+        selectedMainlineStage = manlineStages.find((mainlineStage) => mainlineStage.stageNumber === indexOrName);
+        if (!selectedMainlineStage) selectedMainlineStage = manlineStages.find((mainlineStage) => mainlineStage.stageName === indexOrName);
+        if (!selectedMainlineStage) {
+          return `未找到关卡。`;
+        }
+      }
+
+      const url = `https://wiki.biligame.com/blhx/${selectedMainlineStage.stageNumber}`;
+      https.get(url, (res) => {
+        let chunks = [];
+        res.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+        res.on('end', async () => {
+          const buffer = Buffer.concat(chunks);
+          const data = iconv.decode(buffer, 'utf-8');
+          // fs.writeFile('originalHtml.html', data, (err) => {
+          //   if (err) {
+          //     return logger.error(err);
+          //   }
+          //   logger.success('originalHtml.html 已保存。');
+          // });
+          const $ = load(data);
+
+          // 删除表格中的 max-height 属性
+          $('div[style*="max-height"]').removeAttr('style');
+          // 将所有具有 class="tab-pane" 的元素设置为 active
+          $('div.tab-pane').addClass('active');
+          // 找到所有 role="presentation" 的 li 标签，将其属性设置为 active
+          $('li[role="presentation"]').each((index, element) => {
+            const li = $(element);
+            if (!li.hasClass('active')) {
+              li.addClass('active');
+            }
+          });
+          // 找到所有非 active 的 <li class="tab_li"> 标签并设置为 active
+          $('.TabContainer .tab_li:not(.active)').addClass('active');
+          $('.TabContainer .tab_con:not(.active)').addClass('active');
+          // 删除所有包含 sm-bar 类的元素
+          $('div.sm-bar').remove();
+          $('span.badge.pull-right').remove(); // 删除指定的网页元素
+          $('div.mw-references-wrap').remove(); // 删除 <div class="mw-references-wrap"> 标签
+          // 删除最后一个 <div class="panel panel-shiptable"> 标签
+          const shiptables = $('div.panel.panel-shiptable');
+          if (shiptables.length > 0) {
+            shiptables.last().remove();
+          }
+          $('div.bread.mwiki_hide, div.bread span.mwiki_hide').remove(); // 删除指定的两个网页元素
+          $('div.mw-parser-output').find('div.bread, div.bread span').remove(); // 删除指定的两个网页元素
+          // 选择所有带有 class="heimu" 的元素，并移除它们的 class 属性
+          $('span.heimu').removeAttr('class');
+          // 查找并添加链接的前缀
+          $('a[href^="/blhx"]').each((index, element) => {
+            const href = $(element).attr('href');
+            if (href) {
+              $(element).attr('href', `https://wiki.biligame.com${href}`);
+            }
+          });
+          const mwParserOutputContent = $('div.mw-parser-output').html(); // 获取指定标签的内容
+          if (mwParserOutputContent) {
+            // logger.success(mwParserOutputContent);
+
+            const html = `
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/bootstrap.min.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/rank-buddle.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/vector.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/styles.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/toapp-buddle.css?version=76"/>
+<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/pluginsCommon-buddle.css?version=76"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
+<meta name="renderer" content="webkit"/>
+<!DOCTYPE html>
+<html class="client-nojs" lang="zh-Hans-CN" dir="ltr">
+<head>
+    <meta charset="UTF-8"/>
+    <title>主线关卡攻略</title>
+    <style>
+    .ship_word_line, th {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    </style>
+
+    <link rel="stylesheet"
+        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.MobileDetect.mobileonly%7Cext.visualEditor.desktopArticleTarget.noscript%7Cskins.vector.styles.legacy&amp;only=styles&amp;skin=vector"/>
+    <link rel="stylesheet"
+        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.smw.style%7Cext.smw.tooltip.styles&amp;only=styles&amp;skin=vector"/>
+    <link rel="stylesheet"
+        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.srf.styles&amp;only=styles&amp;skin=vector"/>
+    <link rel="stylesheet"
+        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=site.styles&amp;only=styles&amp;skin=vector"/>
+</head>
+<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-${selectedMainlineStage.stageNumber} rootpage-${selectedMainlineStage.stageNumber} skin-vector action-view skin-vector-legacy">
+<div class="game-bg container">
+
+    <div id="content" class="container mw-body" role="main">
+        <div id="bodyContent" class="mw-body-content">
+            <div id="mw-content-text" class="mw-body-content mw-content-ltr" lang="zh-Hans-CN" dir="ltr">
+                <div class="mw-parser-output">
+                    ${mwParserOutputContent}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+`
+
+            // fs.writeFile('mainlineStageHtml.html', html, (err) => {
+            //   if (err) {
+            //     return logger.error(err);
+            //   }
+            //   logger.success('主线关卡信息已保存到 mainlineStageHtml.html');
+            // });
+
+            const page = await ctx.puppeteer.page();
+
+            await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
+
+            await page.setContent(html, {waitUntil: 'networkidle2'});
+            // await ctx.sleep(6 * 1000)
+            // const element = await page.$('.mw-parser-output');
+            // const boundingBox = await element.boundingBox();
+            // const imgBuffer = await page.screenshot({clip: boundingBox, type: imageType});
+            // 自适应页面高度
+            // await page.evaluate(() => {
+            //   document.body.style.height = document.documentElement.scrollHeight + 'px';
+            // });
+            // 获取实际内容高度
+            // const bodyHandle = await page.$('body');
+            // const { height } = await bodyHandle.boundingBox();
+            // await bodyHandle.dispose();
+
+            // 重新设置页面高度
+            // await page.setViewport({ width: 1280, height: height, deviceScaleFactor: 1 });
+            const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
+
+            await page.close();
+            await session.send(h.image(imgBuffer, `image/${imageType}`))
+            // fs.writeFile(`stageImage.${imageType}`, imgBuffer, (err) => {
+            //   if (err) throw err;
+            //   logger.success(`stageImage.${imageType} 文件已保存。`);
+            // });
+          } else {
+            logger.error('未找到指定内容');
+          }
+        });
+      }).on('error', (err) => {
+        logger.error('请求失败：', err.message);
+      });
       //
     });
 }
