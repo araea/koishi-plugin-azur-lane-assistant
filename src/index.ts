@@ -632,7 +632,7 @@ export function apply(ctx: Context, config: Config) {
             if (shouldIncludeTimeInDynamicPush) {
               const currentTime: Date = new Date();
               const beijingTime: string = currentTime.toLocaleString("zh-CN", {timeZone: "Asia/Shanghai"});
-              result = shouldConvertTextToImage ? `>${beijingTime}\n\n${result}` : `${beijingTime}\n\n${result}`;
+              result = shouldConvertTextToImage ? `# ${beijingTime}\n\n${result}` : `${beijingTime}\n\n${result}`;
             }
             // logger.info(result);
             // 如果 text 变了，说明动态更新了
