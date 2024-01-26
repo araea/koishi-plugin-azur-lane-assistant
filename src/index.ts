@@ -32,7 +32,14 @@ export const usage = `## 🌈 使用
   - \`azurLaneAssistant.装备.查询\` - 查询单个装备
 - \`azurLaneAssistant.井号碧蓝榜\` - 井号碧蓝榜相关指令
   - \`azurLaneAssistant.井号碧蓝榜.列表\` - 查看榜单列表
-  - \`azurLaneAssistant.井号碧蓝榜.查询\` - 查看单个榜单`
+  - \`azurLaneAssistant.井号碧蓝榜.查询\` - 查看单个榜单
+- \`azurLaneAssistant.关卡\` - 关卡相关指令
+  - \`azurLaneAssistant.关卡.主线\` - 主线关卡相关指令
+    - \`azurLaneAssistant.关卡.主线.查询\` - 查询主线关卡
+    - \`azurLaneAssistant.关卡.主线.列表\` - 查看主线关卡列表
+  - \`azurLaneAssistant.关卡.总览\` - 关卡总览相关指令
+    - \`azurLaneAssistant.关卡.总览.查询\` - 查询关卡总览
+    - \`azurLaneAssistant.关卡.总览.列表\` - 查看关卡总览列表`
 
 export interface Config {
   // isConsolePromptEnabled: boolean
