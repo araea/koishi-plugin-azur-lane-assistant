@@ -634,6 +634,12 @@ export function apply(ctx: Context, config: Config) {
               const beijingTime: string = currentTime.toLocaleString("zh-CN", {timeZone: "Asia/Shanghai"});
               result = shouldConvertTextToImage ? `# ${beijingTime}\n\n${result}` : `${beijingTime}\n\n${result}`;
             }
+            if (shouldConvertTextToImage) {
+              const lines = result.split('\n');
+              result = lines
+                .map((line) => (line.trim() !== '' && line[0] !== '#' ? `## ${line}` : line))
+                .join('\n');
+            }
             // logger.info(result);
             // 如果 text 变了，说明动态更新了
             let isPush: boolean = false
