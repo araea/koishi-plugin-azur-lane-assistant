@@ -965,161 +965,85 @@ export function apply(ctx: Context, config: Config) {
       }
 
       const url = `https://wiki.biligame.com/blhx/${selectedShipGirl.title}`;
-      https.get(url, (res) => {
-        let chunks = [];
-        res.on('data', (chunk) => {
-          chunks.push(chunk);
-        });
-        res.on('end', async () => {
-          const buffer = Buffer.concat(chunks);
-          const data = iconv.decode(buffer, 'utf-8');
-          // fs.writeFile('originalHtml.html', data, (err) => {
-          //   if (err) {
-          //     return logger.error(err);
-          //   }
-          //   logger.success('originalHtml.html 已保存。');
-          // });
-          const $ = load(data);
-          // 删除表格中的 max-height 属性
-          $('div[style*="max-height"]').removeAttr('style');
+      const page = await ctx.puppeteer.page()
+      await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
+      await page.goto(url, {waitUntil: 'load'});
+      await page.waitForSelector('.mw-parser-output');
 
-          // 删除 canvas 并设置性能表的 width 100
-          // 删除指定的 canvas 元素
-          $('canvas[data-type="canvas"]').remove();
-          // 将包含指定样式的 th 标签的样式改成 <th style="width:100%;">
-          $('th:has(table.wikitable.sv-breakthrough)').css('width', '100%');
-          // 将所有具有 class="tab-pane" 的元素设置为 active
-          $('div.tab-pane').addClass('active');
-          // 找到所有 role="presentation" 的 li 标签，将其属性设置为 active
-          $('li[role="presentation"]').each((index, element) => {
-            const li = $(element);
-            if (!li.hasClass('active')) {
-              li.addClass('active');
-            }
+      await page.evaluate(() => {
+        const modifyCollapsedElements = () => {
+          const collapsedElements = document.querySelectorAll('.panel-collapse.collapse:not(.in)');
+          collapsedElements.forEach(element => {
+            element.classList.add('in');
+            element.setAttribute('aria-expanded', 'true');
           });
-          // 找到所有非 active 的 <li class="tab_li"> 标签并设置为 active
-          $('.TabContainer .tab_li:not(.active)').addClass('active');
-          $('.TabContainer .tab_con:not(.active)').addClass('active');
-          // 删除所有包含 sm-bar 类的元素
-          $('div.sm-bar').remove();
-          $('span.badge.pull-right').remove(); // 删除指定的网页元素
-          $('div.mw-references-wrap').remove(); // 删除 <div class="mw-references-wrap"> 标签
-          // 删除最后一个 <div class="panel panel-shiptable"> 标签
-          const shiptables = $('div.panel.panel-shiptable');
-          if (shiptables.length > 0) {
-            shiptables.last().remove();
-          }
-          // 通过锚点文本删除指定的元素
-          $('a[href="#其它舰船"]').parent().remove();
-          $('h2 span.mw-headline#其它舰船').parent().remove(); // 删除包含特定类和ID的 h2 下的 span 元素
-          $('div.bread.mwiki_hide, div.bread span.mwiki_hide').remove(); // 删除指定的两个网页元素
-          $('div.mw-parser-output').find('div.bread, div.bread span').remove(); // 删除指定的两个网页元素
-          // 选择所有带有 class="heimu" 的元素，并移除它们的 class 属性
-          $('span.heimu').removeAttr('class');
-          // 查找并添加链接的前缀
-          $('a[href^="/blhx"]').each((index, element) => {
-            const href = $(element).attr('href');
-            if (href) {
-              $(element).attr('href', `https://wiki.biligame.com${href}`);
-            }
+        };
+
+        const modifyTabElements = () => {
+          const elements = document.querySelectorAll('div[role="tabpanel"].tab-pane, li[role="presentation"]');
+          elements.forEach((element) => {
+            element.classList.add('active');
           });
-          const mwParserOutputContent = $('div.mw-parser-output').html(); // 获取指定标签的内容
-          if (mwParserOutputContent) {
-            // logger.success(mwParserOutputContent);
+        };
 
-            const html = `
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/bootstrap.min.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/rank-buddle.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/vector.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/styles.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/toapp-buddle.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/pluginsCommon-buddle.css?version=76"/>
-<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-<meta name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
-<meta name="renderer" content="webkit"/>
-<!DOCTYPE html>
-<html class="client-nojs" lang="zh-Hans-CN" dir="ltr">
-<head>
-    <meta charset="UTF-8"/>
-    <title>舰娘图鉴</title>
-    <style>
-    .ship_word_line, th {
-      display: inline-block;
-      vertical-align: middle;
-    }
-    </style>
+        const removeElements = () => {
+          const elementsToDelete = document.querySelectorAll('.wiki-nav.hidden-xs.wiki-nav-celling, .bread.mwiki_hide, .bread, .qchar-container, div.sm-bar, span.badge.pull-right, div.mw-references-wrap, div.panel.panel-shiptable, .alert.alert-danger, .wiki-nav.hidden-xs');
+          elementsToDelete.forEach(element => element.remove());
+        };
 
-    <link rel="stylesheet"
-        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.MobileDetect.nomobile%7Cext.visualEditor.desktopArticleTarget.noscript%7Cmediawiki.page.gallery.styles%7Cskins.vector.styles.legacy&amp;only=styles&amp;skin=vector"/>
-    <link rel="stylesheet"
-        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.smw.style%7Cext.smw.tooltip.styles&amp;only=styles&amp;skin=vector"/>
-    <link rel="stylesheet"
-        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.srf.styles&amp;only=styles&amp;skin=vector"/>
-    <link rel="stylesheet"
-        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=site.styles&amp;only=styles&amp;skin=vector"/>
-</head>
-<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-${selectedShipGirl.title} rootpage-${selectedShipGirl.title} skin-vector action-view skin-vector-legacy">
-<div class="game-bg container">
+        const removeCanvasElements = () => {
+          const canvasElements = document.querySelectorAll('canvas[data-type="canvas"]');
+          canvasElements.forEach(el => el.remove());
+        };
 
-    <div id="content" class="container mw-body" role="main">
-        <div id="bodyContent" class="mw-body-content">
-            <div id="mw-content-text" class="mw-body-content mw-content-ltr" lang="zh-Hans-CN" dir="ltr">
-                <div class="mw-parser-output">
-                    ${mwParserOutputContent}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-</body>
-</html>
-`
+        const modifyTableWidth = () => {
+          const tableElements = document.querySelectorAll('th:has(table.wikitable.sv-breakthrough)');
+          // @ts-ignore
+          tableElements.forEach(el => el.style.width = '100%');
+        };
 
-            // fs.writeFile('shipGirlHtml.html', html, (err) => {
-            //   if (err) {
-            //     return logger.error(err);
-            //   }
-            //   logger.success('舰娘信息已保存到 shipGirlHtml.html');
-            // });
+        const modifyActiveTabs = () => {
+          const tabElements = document.querySelectorAll('.TabContainer .tab_li:not(.active), .TabContainer .tab_con:not(.active)');
+          tabElements.forEach(el => el.classList.add('active'));
+        };
 
-            const page = await ctx.puppeteer.page();
-
-            await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
-
-            await page.setContent(html, {waitUntil: 'networkidle2'});
-
-            // await ctx.sleep(6 * 1000)
-            // const element = await page.$('.mw-parser-output');
-            // const boundingBox = await element.boundingBox();
-            // const imgBuffer = await page.screenshot({clip: boundingBox, type: imageType});
-            // 自适应页面高度
-            // await page.evaluate(() => {
-            //   document.body.style.height = document.documentElement.scrollHeight + 'px';
-            // });
-            // 获取实际内容高度
-            // const bodyHandle = await page.$('body');
-            // const { height } = await bodyHandle.boundingBox();
-            // await bodyHandle.dispose();
-
-            // 重新设置页面高度
-            // await page.setViewport({ width: 1280, height: height, deviceScaleFactor: 1 });
-            const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
-
-            await page.close();
-            await session.send(h.image(imgBuffer, `image/${imageType}`))
-            // fs.writeFile(`shipGirlImage.${imageType}`, imgBuffer, (err) => {
-            //   if (err) throw err;
-            //   logger.success(`shipGirlImage.${imageType} 文件已保存。`);
-            // });
-          } else {
-            logger.error('未找到指定内容');
-          }
+        const elements = document.querySelectorAll('div[style*="max-height"]');
+        elements.forEach(element => {
+          element.removeAttribute('style');
         });
-      }).on('error', (err) => {
-        logger.error('请求失败：', err.message);
+
+        modifyCollapsedElements();
+        modifyTabElements();
+        removeElements();
+        removeCanvasElements();
+        modifyTableWidth();
+        modifyActiveTabs();
+
+        const otherShipSection = document.querySelector('a[href="#其它舰船"]');
+        // @ts-ignore
+        if (otherShipSection) otherShipSection.parentNode.remove();
+
+        const otherShipHeader = document.querySelector('h2 span.mw-headline#其它舰船');
+        // @ts-ignore
+        if (otherShipHeader) otherShipHeader.parentNode.remove();
+
+        const removeHeimuClass = () => {
+          const heimuElements = document.querySelectorAll('span.heimu');
+          heimuElements.forEach(el => el.removeAttribute('class'));
+        };
+
+        removeHeimuClass();
       });
+
+      const element = await page.$('.mw-parser-output');
+      const imageBuffer = await element.screenshot({type: imageType});
+      // fs.writeFile(`shipGirlImage2.${imageType}`, imageBuffer, (err) => {
+      //   if (err) throw err;
+      //   logger.success(`shipGirlImage2.${imageType} 文件已保存。`);
+      // });
+      await session.send(h.image(imageBuffer, `image/${imageType}`))
+
+      await page.close()
       //
     });
 
@@ -1338,7 +1262,7 @@ export function apply(ctx: Context, config: Config) {
         }
       }
 
-      const url = `https://wiki.biligame.com/blhx/${selecteEquipment.title}`;
+      const url = `https://wiki.biligame.com/blhx/${selecteEquipment.title.replace(/ /g, '_')}`;
       https.get(url, (res) => {
         let chunks = [];
         res.on('data', (chunk) => {
@@ -1347,60 +1271,56 @@ export function apply(ctx: Context, config: Config) {
         res.on('end', async () => {
           const buffer = Buffer.concat(chunks);
           const data = iconv.decode(buffer, 'utf-8');
-          // fs.writeFile('originalHtml.html', data, (err) => {
-          //   if (err) {
-          //     return logger.error(err);
-          //   }
-          //   logger.success('originalHtml.html 已保存。');
-          // });
           const $ = load(data);
+
           // 获取包含 style 属性的元素
           const elementsWithStyle = $('[style]');
 
+          // 删除 max-width:400px 属性
           elementsWithStyle.each((index, element) => {
-            const styleAttr = $(element).attr('style');
+            const $element = $(element);
+            const styleAttr = $element.attr('style');
             if (styleAttr) {
-              // 删除 max-width:400px 属性
               const updatedStyle = styleAttr.replace(/max-width\s*:\s*400px\s*;?/i, '');
-              $(element).attr('style', updatedStyle);
+              $element.attr('style', updatedStyle);
             }
           });
-          // 删除所有包含 sm-bar 类的元素
-          $('div.sm-bar').remove();
-          // 删除延伸阅读
-          $('.col-md-4').remove();
-          $('span.label.label-default').remove(); // 删除备注
-          $('a:contains("文件:")').remove(); // 删除备注的文件
+
+          // 删除指定的元素
+          $('div.sm-bar, .col-md-4, span.label.label-default, a:contains("文件:")').remove();
+
           // 删除最后一个 <div class="panel panel-shiptable"> 标签
-          const shiptables = $('div.panel.panel-shiptable');
-          if (shiptables.length > 0) {
-            shiptables.last().remove();
-          }
-          // 找到所有 role="presentation" 的 li 标签，将其属性设置为 active
-          $('li[role="presentation"]').each((index, element) => {
-            const li = $(element);
-            if (!li.hasClass('active')) {
-              li.addClass('active');
-            }
-          });
+          $('div.panel.panel-shiptable:last').remove();
+
+          // 将 role="presentation" 的 li 标签的属性设置为 active
+          $('li[role="presentation"]').not('.active').addClass('active');
+
           // 将所有具有 class="tab-pane" 的元素设置为 active
           $('div.tab-pane').addClass('active');
+
           // 通过锚点文本删除指定的元素
           $('a[href="#装备导航"]').parent().remove();
-          $('h2 span.mw-headline#装备导航').parent().remove(); // 删除包含特定类和ID的 h2 下的 span 元素
-          $('div.mw-parser-output').find('div.bread, div.bread span').remove(); // 删除指定的两个网页元素
-          // 选择所有带有 class="heimu" 的元素，并移除它们的 class 属性
+          $('h2 span.mw-headline#装备导航').parent().remove();
+
+          // 删除指定的两个网页元素
+          $('div.mw-parser-output').find('div.bread, div.bread span').remove();
+
+          // 移除带有 class="heimu" 的元素的 class 属性
           $('span.heimu').removeAttr('class');
+
           // 查找并添加链接的前缀
           $('a[href^="/blhx"]').each((index, element) => {
-            const href = $(element).attr('href');
+            const $element = $(element);
+            const href = $element.attr('href');
             if (href) {
-              $(element).attr('href', `https://wiki.biligame.com${href}`);
+              $element.attr('href', `https://wiki.biligame.com${href}`);
             }
           });
-          const mwParserOutputContent = $('div.mw-parser-output').html(); // 获取指定标签的内容
+
+          // 获取指定标签的内容
+          const mwParserOutputContent = $('div.mw-parser-output').html();
+
           if (mwParserOutputContent) {
-            // logger.success(mwParserOutputContent);
 
             const html = `
 <link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/bootstrap.min.css?version=76"/>
@@ -1444,42 +1364,17 @@ export function apply(ctx: Context, config: Config) {
 </html>
 `
 
-            // fs.writeFile('equipmentHtml.html', html, (err) => {
-            //   if (err) {
-            //     return logger.error(err);
-            //   }
-            //   logger.success('装备信息已保存到 equipmentHtml.html');
-            // });
-
             const page = await ctx.puppeteer.page();
 
             await page.setViewport({width: 888, height: 0, deviceScaleFactor: 1});
 
             await page.setContent(html, {waitUntil: 'networkidle2'});
 
-            // await ctx.sleep(6 * 1000)
-            // const element = await page.$('.mw-parser-output');
-            // const boundingBox = await element.boundingBox();
-            // const imgBuffer = await page.screenshot({clip: boundingBox, type: imageType});
-            // 自适应页面高度
-            // await page.evaluate(() => {
-            //   document.body.style.height = document.documentElement.scrollHeight + 'px';
-            // });
-            // 获取实际内容高度
-            // const bodyHandle = await page.$('body');
-            // const { height } = await bodyHandle.boundingBox();
-            // await bodyHandle.dispose();
-
-            // 重新设置页面高度
-            // await page.setViewport({ width: 1280, height: height, deviceScaleFactor: 1 });
             const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
 
             await page.close();
             await session.send(h.image(imgBuffer, `image/${imageType}`))
-            // fs.writeFile(`equipmentImage.${imageType}`, imgBuffer, (err) => {
-            //   if (err) throw err;
-            //   logger.success(`equipmentImage.${imageType} 文件已保存。`);
-            // });
+
           } else {
             logger.error('未找到指定内容');
           }
@@ -1911,184 +1806,97 @@ export function apply(ctx: Context, config: Config) {
       }
 
       const url = `https://wiki.biligame.com/blhx/${selectedStage.title}`;
-      https.get(url, (res) => {
-        let chunks = [];
-        res.on('data', (chunk) => {
-          chunks.push(chunk);
-        });
-        res.on('end', async () => {
-          const buffer = Buffer.concat(chunks);
-          const data = iconv.decode(buffer, 'utf-8');
-          // fs.writeFile('originalHtml.html', data, (err) => {
-          //   if (err) {
-          //     return logger.error(err);
-          //   }
-          //   logger.success('originalHtml.html 已保存。');
-          // });
-          const $ = load(data);
+      const page = await ctx.puppeteer.page()
+      await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
+      await page.goto(url, {waitUntil: 'networkidle0'});
+      await page.waitForSelector('.mw-parser-output');
 
-          // 删除第一个和第二个指定样式的 div 元素
-          $('div[style="width:100%;border-radius: 8px;border: 1px solid #D1D1D1;padding: 10px;margin: 2px 0px;font-size:18px"]').remove();
+      await page.evaluate(() => {
 
-          // 删除 class 为 mwiki_hide 的 div 元素
-          $('div.mwiki_hide').remove();
-          // 删除指定的长 ul-dl-ul 嵌套元素
-          $('ul>li>dl>dt').parent().nextUntil('div.dbxx').remove();
-          // 选择指定的 ul-li-dl 元素
-          const target = $("dt:contains('还可以查看以下分类文章页面')").parent();
-          // 删除该元素
-          target.remove();
-          // 删除 class 为 dbxx 的 div 元素
-          $('div.dbxx').remove();
-          // 删除表格中的 max-height 属性
-          $('div[style*="max-height"]').removeAttr('style');
-          // 将所有具有 class="tab-pane" 的元素设置为 active
-          $('div.tab-pane').addClass('active');
-          // 找到所有 role="presentation" 的 li 标签，将其属性设置为 active
-          $('li[role="presentation"]').each((index, element) => {
-            const li = $(element);
-            if (!li.hasClass('active')) {
-              li.addClass('active');
-            }
-          });
-          // 找到所有非 active 的 <li class="tab_li"> 标签并设置为 active
-          $('.TabContainer .tab_li:not(.active)').addClass('active');
-          $('.TabContainer .tab_con:not(.active)').addClass('active');
-          // 删除所有包含 sm-bar 类的元素
-          $('div.sm-bar').remove();
-          $('span.badge.pull-right').remove(); // 删除指定的网页元素
-          $('div.mw-references-wrap').remove(); // 删除 <div class="mw-references-wrap"> 标签
-          // 删除最后一个 <div class="panel panel-shiptable"> 标签
-          const shiptables = $('div.panel.panel-shiptable');
-          if (shiptables.length > 0) {
-            shiptables.last().remove();
-          }
-          // 通过锚点文本删除指定的元素
-          $('a[href="#章节关卡"]').parent().remove();
-          $('h2 span.mw-headline#章节关卡').parent().remove(); // 删除包含特定类和ID的 h2 下的 span 元素
-          $('h3 span.mw-headline#常规关卡').parent().remove(); // 删除包含特定类和ID的 h3 下的 span 元素
-          $('h3 span.mw-headline#大型活动关卡E\\.X\\.').parent().remove(); // 删除包含特定类和ID的 h3 下的 span 元素
-          $('h3 span.mw-headline#小型活动关卡S\\.P\\.').parent().remove(); // 删除包含特定类和ID的 h3 下的 span 元素 // 小型活动关卡S.P.
-          $('h3 span.mw-headline#特殊活动关卡T').parent().remove(); // 删除包含特定类和ID的 h3 下的 span 元素
-          $('h4 span.mw-headline#常规关卡列表').parent().remove(); // 删除包含特定类和ID的 h4 下的 span 元素
-          $('h4 span.mw-headline#困难难度常规关卡').parent().remove(); // 删除包含特定类和ID的 h4 下的 span 元素
-          $('div.bread.mwiki_hide, div.bread span.mwiki_hide').remove(); // 删除指定的两个网页元素
-          $('div.mw-parser-output').find('div.bread, div.bread span').remove(); // 删除指定的两个网页元素
-          // 选择所有带有 class="heimu" 的元素，并移除它们的 class 属性
-          $('span.heimu').removeAttr('class');
-          $('.alert.alert-info[role="alert"]').remove();
-          $('.alert.alert-danger').remove();
-          $('dl dd').remove();
-          $('table[style="float:left;margin:5px;text-align:center;"]').remove();
-          // 查找所有空的标签并删除它们
-          // $('p, dl, div').each((index, element) => {
-          //   if ($(element).text().trim() === '') {
-          //     $(element).remove();
-          //   }
-          // });
-          // 查找并添加链接的前缀
-          $('a[href^="/blhx"]').each((index, element) => {
-            const href = $(element).attr('href');
-            if (href) {
-              $(element).attr('href', `https://wiki.biligame.com${href}`);
-            }
-          });
-          const mwParserOutputContent = $('div.mw-parser-output').html(); // 获取指定标签的内容
-          if (mwParserOutputContent) {
-            // logger.success(mwParserOutputContent);
-
-            const html = `
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/bootstrap.min.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/rank-buddle.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/vector.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/styles.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/toapp-buddle.css?version=76"/>
-<link rel="stylesheet" href="https://staticwiki.biligame.com/resources/bili/css/pluginsCommon-buddle.css?version=76"/>
-<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-<meta name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
-<meta name="renderer" content="webkit"/>
-<!DOCTYPE html>
-<html class="client-nojs" lang="zh-Hans-CN" dir="ltr">
-<head>
-    <meta charset="UTF-8"/>
-    <title>关卡攻略</title>
-    <style>
-    .ship_word_line, th {
-      display: inline-block;
-      vertical-align: middle;
-    }
-    </style>
-
-    <link rel="stylesheet"
-        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.MobileDetect.nomobile%7Cext.visualEditor.desktopArticleTarget.noscript%7Cmediawiki.page.gallery.styles%7Cskins.vector.styles.legacy&amp;only=styles&amp;skin=vector"/>
-    <link rel="stylesheet"
-        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.smw.style%7Cext.smw.tooltip.styles&amp;only=styles&amp;skin=vector"/>
-    <link rel="stylesheet"
-        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=ext.srf.styles&amp;only=styles&amp;skin=vector"/>
-    <link rel="stylesheet"
-        href="https://wiki.biligame.com/blhx/load.php?lang=zh-cn&amp;modules=site.styles&amp;only=styles&amp;skin=vector"/>
-</head>
-<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-${selectedStage.name} rootpage-${selectedStage.name} skin-vector action-view skin-vector-legacy">
-<div class="game-bg container">
-
-    <div id="content" class="container mw-body" role="main">
-        <div id="bodyContent" class="mw-body-content">
-            <div id="mw-content-text" class="mw-body-content mw-content-ltr" lang="zh-Hans-CN" dir="ltr">
-                <div class="mw-parser-output">
-                    ${mwParserOutputContent}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-</body>
-</html>
-`
-
-            // fs.writeFile('stageHtml.html', html, (err) => {
-            //   if (err) {
-            //     return logger.error(err);
-            //   }
-            //   logger.success('关卡信息已保存到 stageHtml.html');
-            // });
-
-            const page = await ctx.puppeteer.page();
-
-            await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
-
-            await page.setContent(html, {waitUntil: 'networkidle2'});
-            // await ctx.sleep(6 * 1000)
-            // const element = await page.$('.mw-parser-output');
-            // const boundingBox = await element.boundingBox();
-            // const imgBuffer = await page.screenshot({clip: boundingBox, type: imageType});
-            // 自适应页面高度
-            // await page.evaluate(() => {
-            //   document.body.style.height = document.documentElement.scrollHeight + 'px';
-            // });
-            // 获取实际内容高度
-            // const bodyHandle = await page.$('body');
-            // const { height } = await bodyHandle.boundingBox();
-            // await bodyHandle.dispose();
-
-            // 重新设置页面高度
-            // await page.setViewport({ width: 1280, height: height, deviceScaleFactor: 1 });
-            const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
-
-            await page.close();
-            await session.send(h.image(imgBuffer, `image/${imageType}`))
-            // fs.writeFile(`stageImage.${imageType}`, imgBuffer, (err) => {
-            //   if (err) throw err;
-            //   logger.success(`stageImage.${imageType} 文件已保存。`);
-            // });
-          } else {
-            logger.error('未找到指定内容');
+        const lis = document.querySelectorAll('.tabbernav > li');
+        lis.forEach(li => {
+          if (!li.classList.contains('tabberactive')) {
+            li.classList.add('tabberactive');
           }
         });
-      }).on('error', (err) => {
-        logger.error('请求失败：', err.message);
+
+        // 获取所有 class 为 "tabbertab" 的 div 元素
+        const tabberTabs = document.querySelectorAll('.tabbertab');
+
+        // 遍历每个 tabberTab 元素
+        tabberTabs.forEach(tabberTab => {
+          // 获取元素的 style 属性值
+          const style = tabberTab.getAttribute('style');
+
+          // 如果 style 包含 display: none;，则移除它
+          if (style && style.includes('display: none;')) {
+            tabberTab.setAttribute('style', style.replace('display: none;', ''));
+          }
+        });
+
+        const elements = document.querySelectorAll('div[style*="max-height"]');
+        elements.forEach(element => {
+          element.removeAttribute('style');
+        });
+
+        const removeElements = () => {
+          const elementsToDelete = document.querySelectorAll('.wiki-nav.hidden-xs.wiki-nav-celling, .bread.mwiki_hide, .bread, .qchar-container, div.sm-bar, span.badge.pull-right, div.mw-references-wrap, div.panel.panel-shiptable, .alert.alert-danger, .wiki-nav.hidden-xs, .alert.alert-info[role="alert"], dl dd, div.dbxx, ul>li>dl>dt, table[style="float:left;margin:5px;text-align:center;"]');
+          elementsToDelete.forEach(element => element.remove());
+        };
+        removeElements();
+
+        const modifyCollapsedElements = () => {
+          const collapsedElements = document.querySelectorAll('.panel-collapse.collapse:not(.in)');
+          collapsedElements.forEach(element => {
+            element.classList.add('in');
+            element.setAttribute('aria-expanded', 'true');
+          });
+        };
+        modifyCollapsedElements();
+        const modifyTabElements = () => {
+          const elements = document.querySelectorAll('div[role="tabpanel"].tab-pane, li[role="presentation"]');
+          elements.forEach((element) => {
+            element.classList.add('active');
+          });
+        };
+        modifyTabElements();
+        const otherShipSection = document.querySelector('a[href="#章节关卡"]');
+        // @ts-ignore
+        if (otherShipSection) otherShipSection.parentNode.remove();
+
+        const headersToRemove = [
+          'h2 span.mw-headline#章节关卡',
+          'h3 span.mw-headline#常规关卡',
+          'h3 span.mw-headline#大型活动关卡E\\.X\\.',
+          'h3 span.mw-headline#小型活动关卡S\\.P\\.',
+          'h3 span.mw-headline#特殊活动关卡T',
+          'h4 span.mw-headline#常规关卡列表',
+          'h4 span.mw-headline#困难难度常规关卡',
+        ];
+
+        headersToRemove.forEach(selector => {
+          const header = document.querySelector(selector);
+          // @ts-ignore
+          if (header) header.parentNode.remove();
+        });
+
+        const removeHeimuClass = () => {
+          const heimuElements = document.querySelectorAll('span.heimu');
+          heimuElements.forEach(el => el.removeAttribute('class'));
+        };
+
+        removeHeimuClass();
       });
+
+      const element = await page.$('.mw-parser-output');
+      const imageBuffer = await element.screenshot({type: imageType});
+      // fs.writeFile(`关卡总览2.${imageType}`, imageBuffer, (err) => {
+      //   if (err) throw err;
+      //   logger.success(`关卡总览2.${imageType} 文件已保存。`);
+      // });
+      await session.send(h.image(imageBuffer, `image/${imageType}`))
+
+      await page.close()
       //
     });
 
@@ -2268,12 +2076,6 @@ export function apply(ctx: Context, config: Config) {
         res.on('end', async () => {
           const buffer = Buffer.concat(chunks);
           const data = iconv.decode(buffer, 'utf-8');
-          // fs.writeFile('originalHtml.html', data, (err) => {
-          //   if (err) {
-          //     return logger.error(err);
-          //   }
-          //   logger.success('originalHtml.html 已保存。');
-          // });
           const $ = load(data);
 
           // 删除表格中的 max-height 属性
@@ -2364,33 +2166,12 @@ export function apply(ctx: Context, config: Config) {
 </html>
 `
 
-            // fs.writeFile('mainlineStageHtml.html', html, (err) => {
-            //   if (err) {
-            //     return logger.error(err);
-            //   }
-            //   logger.success('主线关卡信息已保存到 mainlineStageHtml.html');
-            // });
-
             const page = await ctx.puppeteer.page();
 
             await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
 
             await page.setContent(html, {waitUntil: 'networkidle2'});
-            // await ctx.sleep(6 * 1000)
-            // const element = await page.$('.mw-parser-output');
-            // const boundingBox = await element.boundingBox();
-            // const imgBuffer = await page.screenshot({clip: boundingBox, type: imageType});
-            // 自适应页面高度
-            // await page.evaluate(() => {
-            //   document.body.style.height = document.documentElement.scrollHeight + 'px';
-            // });
-            // 获取实际内容高度
-            // const bodyHandle = await page.$('body');
-            // const { height } = await bodyHandle.boundingBox();
-            // await bodyHandle.dispose();
 
-            // 重新设置页面高度
-            // await page.setViewport({ width: 1280, height: height, deviceScaleFactor: 1 });
             const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
 
             await page.close();
@@ -2406,6 +2187,90 @@ export function apply(ctx: Context, config: Config) {
       }).on('error', (err) => {
         logger.error('请求失败：', err.message);
       });
+      //
+    });
+
+  // 攻略* gl*
+  ctx.command('azurLaneAssistant.攻略', '查看攻略指令帮助')
+    .action(async ({session}) => {
+      await session.execute(`azurLaneAssistant.攻略 -h`)
+    })
+
+  // 攻略.月度BOSS解析* glyd*
+  ctx.command('azurLaneAssistant.攻略.月度BOSS解析', '查看月度BOSS解析攻略')
+    .action(async ({session}) => {
+
+      const url = `https://wiki.biligame.com/blhx/%E5%A4%A7%E5%9E%8B%E4%BD%9C%E6%88%98%E6%9C%88%E5%BA%A6BOSS%E8%A7%A3%E6%9E%90`
+      const page = await ctx.puppeteer.page()
+      await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
+      await page.goto(url, {waitUntil: 'load'});
+      await page.waitForSelector('.mw-parser-output');
+
+      await page.evaluate(() => {
+        const modifyCollapsedElements = () => {
+          const collapsedElements = document.querySelectorAll('.panel-collapse.collapse:not(.in)');
+          collapsedElements.forEach(element => {
+            element.classList.add('in');
+            element.setAttribute('aria-expanded', 'true');
+          });
+        };
+        modifyCollapsedElements();
+        const removeElements = () => {
+          const elementsToDelete = document.querySelectorAll('.wiki-nav.hidden-xs.wiki-nav-celling, .bread.mwiki_hide, .bread, .qchar-container, div.sm-bar, span.badge.pull-right, div.mw-references-wrap, div.panel.panel-shiptable, .alert.alert-danger, .wiki-nav.hidden-xs');
+          elementsToDelete.forEach(element => element.remove());
+        };
+
+        removeElements();
+      });
+      const element = await page.$('.mw-parser-output');
+      const imageBuffer = await element.screenshot({type: imageType});
+      await session.send(h.image(imageBuffer, `image/${imageType}`))
+      // fs.writeFile(`月度BOSS.${imageType}`, imageBuffer, (err) => {
+      //   if (err) throw err;
+      //   logger.success(`月度BOSS.${imageType} 文件已保存。`);
+      // });
+      await page.close()
+      //
+    });
+
+  // 攻略.余烬BOSS攻略要点* 攻略.METAboss攻略要点* glyj*
+  ctx.command('azurLaneAssistant.攻略.余烬BOSS攻略要点', '查看余烬BOSS攻略要点')
+    .action(async ({session}) => {
+
+      const url = `https://wiki.biligame.com/blhx/METAboss%E6%94%BB%E7%95%A5%E8%A6%81%E7%82%B9`;
+      const page = await ctx.puppeteer.page()
+      await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
+      await page.goto(url, {waitUntil: 'load'});
+      await page.waitForSelector('.mw-parser-output');
+
+      await page.evaluate(() => {
+        const collapsedElements = document.querySelectorAll('.panel-collapse.collapse:not(.in)');
+        collapsedElements.forEach(element => {
+          element.classList.add('in');
+          element.setAttribute('aria-expanded', 'true');
+        });
+        const modifyTabElements = () => {
+          const elements = document.querySelectorAll('div[role="tabpanel"].tab-pane, li[role="presentation"]');
+          elements.forEach((element) => {
+            element.classList.add('active');
+          });
+        };
+        modifyTabElements();
+        const removeElements = () => {
+          const elementsToDelete = document.querySelectorAll('.wiki-nav.hidden-xs.wiki-nav-celling, .bread.mwiki_hide, .bread, .qchar-container, div.sm-bar, span.badge.pull-right, div.mw-references-wrap, div.panel.panel-shiptable, .alert.alert-danger, .wiki-nav.hidden-xs');
+          elementsToDelete.forEach(element => element.remove());
+        };
+        removeElements();
+      });
+
+      const element = await page.$('.mw-parser-output');
+      const imageBuffer = await element.screenshot({type: imageType});
+      await session.send(h.image(imageBuffer, `image/${imageType}`))
+      // fs.writeFile(`余烬BOSS.${imageType}`, imageBuffer, (err) => {
+      //   if (err) throw err;
+      //   logger.success(`余烬BOSS.${imageType} 文件已保存。`);
+      // });
+      await page.close()
       //
     });
 }
