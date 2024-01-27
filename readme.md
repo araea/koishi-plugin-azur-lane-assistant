@@ -42,23 +42,28 @@
 
 ## 🌼 指令
 
-- `azurLaneAssistant` - 查看使用帮助
-- `azurLaneAssistant.舰娘` - 舰娘相关指令
-  - `azurLaneAssistant.舰娘.列表` - 查看舰娘列表
-  - `azurLaneAssistant.舰娘.查询` - 查询单个舰娘
-- `azurLaneAssistant.装备` - 装备相关指令
-  - `azurLaneAssistant.装备.列表` - 查看装备列表
-  - `azurLaneAssistant.装备.查询` - 查询单个装备
-- `azurLaneAssistant.井号碧蓝榜` - 井号碧蓝榜相关指令
-  - `azurLaneAssistant.井号碧蓝榜.列表` - 查看榜单列表
-  - `azurLaneAssistant.井号碧蓝榜.查询` - 查看单个榜单
-- `azurLaneAssistant.关卡` - 关卡相关指令
-  - `azurLaneAssistant.关卡.主线` - 主线关卡相关指令
-    - `azurLaneAssistant.关卡.主线.查询` - 查询主线关卡
-    - `azurLaneAssistant.关卡.主线.列表` - 查看主线关卡列表
-  - `azurLaneAssistant.关卡.总览` - 关卡总览相关指令
-    - `azurLaneAssistant.关卡.总览.查询` - 查询关卡总览
-    - `azurLaneAssistant.关卡.总览.列表` - 查看关卡总览列表
+- `azurlaneassistant` - 查看使用帮助
+- `azurlaneassistant.攻略` - 攻略相关指令
+  - `azurlaneassistant.攻略.余烬boss攻略要点` - 查看余烬boss攻略要点
+  - `azurlaneassistant.攻略.月度boss解析` - 查看月度boss解析
+- `azurlaneassistant.关卡` - 关卡相关指令
+  - `azurlaneassistant.关卡.主线` - 主线关卡相关指令
+    - `azurlaneassistant.关卡.主线.查询` - 查询主线关卡
+    - `azurlaneassistant.关卡.主线.列表` - 查看主线关卡列表
+  - `azurlaneassistant.关卡.总览` - 关卡总览相关指令
+    - `azurlaneassistant.关卡.总览.查询` - 查询关卡总览
+    - `azurlaneassistant.关卡.总览.列表` - 查看关卡总览列表
+- `azurlaneassistant.舰娘` - 舰娘相关指令
+  - `azurlaneassistant.舰娘.查询` - 查询舰娘信息
+  - `azurlaneassistant.舰娘.立绘` - 查看舰娘立绘
+  - `azurlaneassistant.舰娘.列表` - 查看舰娘列表
+  - `azurlaneassistant.舰娘.语音` - 获取舰娘语音信息
+- `azurlaneassistant.井号碧蓝榜` - 井号碧蓝榜相关指令
+  - `azurlaneassistant.井号碧蓝榜.查询` - 查询井号碧蓝榜信息
+  - `azurlaneassistant.井号碧蓝榜.列表` - 查看井号碧蓝榜列表
+- `azurlaneassistant.装备` - 装备相关指令
+  - `azurlaneassistant.装备.查询` - 查询装备信息
+  - `azurlaneassistant.装备.列表` - 查看装备列表
 
 ## 🍧 致谢
 

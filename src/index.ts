@@ -7,6 +7,7 @@ import {} from 'koishi-plugin-markdown-to-image-service'
 import {load} from "cheerio";
 import iconv from "iconv-lite";
 import * as fs from "fs";
+import {next} from "cheerio/lib/api/traversing";
 
 export const inject = {
   required: ['puppeteer'],
@@ -23,23 +24,28 @@ export const usage = `## 🌈 使用
 
 ## 🌼 指令
 
-- \`azurLaneAssistant\` - 查看使用帮助
-- \`azurLaneAssistant.舰娘\` - 舰娘相关指令
-  - \`azurLaneAssistant.舰娘.列表\` - 查看舰娘列表
-  - \`azurLaneAssistant.舰娘.查询\` - 查询单个舰娘
-- \`azurLaneAssistant.装备\` - 装备相关指令
-  - \`azurLaneAssistant.装备.列表\` - 查看装备列表
-  - \`azurLaneAssistant.装备.查询\` - 查询单个装备
-- \`azurLaneAssistant.井号碧蓝榜\` - 井号碧蓝榜相关指令
-  - \`azurLaneAssistant.井号碧蓝榜.列表\` - 查看榜单列表
-  - \`azurLaneAssistant.井号碧蓝榜.查询\` - 查看单个榜单
-- \`azurLaneAssistant.关卡\` - 关卡相关指令
-  - \`azurLaneAssistant.关卡.主线\` - 主线关卡相关指令
-    - \`azurLaneAssistant.关卡.主线.查询\` - 查询主线关卡
-    - \`azurLaneAssistant.关卡.主线.列表\` - 查看主线关卡列表
-  - \`azurLaneAssistant.关卡.总览\` - 关卡总览相关指令
-    - \`azurLaneAssistant.关卡.总览.查询\` - 查询关卡总览
-    - \`azurLaneAssistant.关卡.总览.列表\` - 查看关卡总览列表`
+- \`azurlaneassistant\` - 查看使用帮助
+- \`azurlaneassistant.攻略\` - 攻略相关指令
+  - \`azurlaneassistant.攻略.余烬boss攻略要点\` - 查看余烬boss攻略要点
+  - \`azurlaneassistant.攻略.月度boss解析\` - 查看月度boss解析
+- \`azurlaneassistant.关卡\` - 关卡相关指令
+  - \`azurlaneassistant.关卡.主线\` - 主线关卡相关指令
+    - \`azurlaneassistant.关卡.主线.查询\` - 查询主线关卡
+    - \`azurlaneassistant.关卡.主线.列表\` - 查看主线关卡列表
+  - \`azurlaneassistant.关卡.总览\` - 关卡总览相关指令
+    - \`azurlaneassistant.关卡.总览.查询\` - 查询关卡总览
+    - \`azurlaneassistant.关卡.总览.列表\` - 查看关卡总览列表
+- \`azurlaneassistant.舰娘\` - 舰娘相关指令
+  - \`azurlaneassistant.舰娘.查询\` - 查询舰娘信息
+  - \`azurlaneassistant.舰娘.立绘\` - 查看舰娘立绘
+  - \`azurlaneassistant.舰娘.列表\` - 查看舰娘列表
+  - \`azurlaneassistant.舰娘.语音\` - 获取舰娘语音信息
+- \`azurlaneassistant.井号碧蓝榜\` - 井号碧蓝榜相关指令
+  - \`azurlaneassistant.井号碧蓝榜.查询\` - 查询井号碧蓝榜信息
+  - \`azurlaneassistant.井号碧蓝榜.列表\` - 查看井号碧蓝榜列表
+- \`azurlaneassistant.装备\` - 装备相关指令
+  - \`azurlaneassistant.装备.查询\` - 查询装备信息
+  - \`azurlaneassistant.装备.列表\` - 查看装备列表`
 
 export interface Config {
   // isConsolePromptEnabled: boolean
@@ -954,13 +960,13 @@ export function apply(ctx: Context, config: Config) {
         if (index > 0 && index <= shipGirls.length) {
           selectedShipGirl = shipGirls[index - 1];
         } else {
-          return `序号超出范围。`;
+          return `序号 ${index} 超出范围（1~${shipGirls.length}）。`;
         }
       } else {
         selectedShipGirl = shipGirls.find((girl) => girl.name === indexOrName);
         if (!selectedShipGirl) selectedShipGirl = shipGirls.find((girl) => girl.title === indexOrName);
         if (!selectedShipGirl) {
-          return `未找到舰娘。`;
+          return `未找到舰娘：${indexOrName}。`;
         }
       }
 
@@ -1047,13 +1053,447 @@ export function apply(ctx: Context, config: Config) {
       //
     });
 
-  // 装备* zb*
+  // 舰娘.立绘* jnlh*
+  ctx.command('azurLaneAssistant.舰娘.立绘 [indexOrName:text]', '查询舰娘立绘')
+    .action(async ({session}, indexOrName) => {
+      if (!indexOrName) {
+        await session.send(`请输入待查询立绘的【舰娘名】或【序号】或【取消】：`);
+        const userInput = await session.prompt();
+        if (!userInput) return `输入超时。`;
+        if (userInput === '取消') return `本次查询已取消。`;
+        indexOrName = userInput;
+      }
+      let selectedShipGirl: ShipGirl;
+      if (!isNaN(Number(indexOrName))) {
+        const index = parseInt(indexOrName);
+        if (index > 0 && index <= shipGirls.length) {
+          selectedShipGirl = shipGirls[index - 1];
+        } else {
+          return `序号 ${index} 超出范围（1~${shipGirls.length}）。`;
+        }
+      } else {
+        selectedShipGirl = shipGirls.find((girl) => girl.name === indexOrName);
+        if (!selectedShipGirl) selectedShipGirl = shipGirls.find((girl) => girl.title === indexOrName);
+        if (!selectedShipGirl) {
+          return `未找到立绘：${indexOrName}。`;
+        }
+      }
+
+      const url = `https://wiki.biligame.com/blhx/${selectedShipGirl.title}`;
+      https.get(url, (res) => {
+        let chunks = [];
+        res.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+        res.on('end', async () => {
+          const buffer = Buffer.concat(chunks);
+          const data = iconv.decode(buffer, 'utf-8');
+          const $ = load(data);
+
+          interface Illustration {
+            nameNoFileExtension: string;
+            src: string;
+            imgString: string;
+          }
+
+          const illustrations: Illustration[] = [];
+
+          $('.tab_con img').each((index, element) => {
+            const name = $(element).attr('alt'); // 去除文件名后缀后的立绘名字
+            const nameNoFileExtension = removeFileExtension(name)
+            const src = $(element).attr('src');
+            const imgString = $.html(element); // 获取 img 标签的字符串形式
+
+            illustrations.push({nameNoFileExtension, src, imgString});
+          })
+
+          const batchCount = 1
+          const illustrationsLength = illustrations.length;
+          const batchSize = Math.floor(illustrationsLength / batchCount); // 每批处理的数量
+          let serialNumber = 1; // 序号变量
+          let tableRows = [];
+
+          const tableStyle = `
+    <style>
+        body {
+            margin: 0;
+            zoom: 200%;
+        }
+        .list {
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+            overflow: scroll;
+        }
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            height: min-content;
+            border: 1px solid #ddd;
+        }
+        th,
+        td {
+            text-align: left;
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-right: 5px;
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+        }
+        tr:nth-child(even) {
+            background-color: #f5f5f5;
+        }
+        .line1 {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: max-content;
+        }
+        .line2 {
+            display: flex;
+            flex-direction: row;
+            width: max-content;
+        }
+        .id {
+            color: #444444;
+            font-size: x-small;
+            background-color: #f8f8f8;
+            padding: 1px 3px;
+            border-radius: 5px;
+            border-color: #dee2e6;
+            border-style: solid;
+            border-width: 1px;
+            margin-left: 5px;
+        }
+        .command {
+            color: #444444;
+            margin-left: 5px;
+        }
+        .title {
+            color: #6c757d;
+            font-size: xx-small;
+            margin-left: 10px;
+        }
+    </style>
+`;
+
+          const generateTable = (rows: any): string => {
+            return `
+        <html lang="zh">
+          <head>
+            ${tableStyle}
+          <title>舰娘立绘</title>
+          </head>
+          <body>
+            <div class="list">
+              <table>
+                ${rows.join('\n')}
+              </table>
+            </div>
+          </body>
+        </html>
+      `;
+          };
+
+          const page = await ctx.puppeteer.page();
+          await page.setViewport({width: 100, height: 100});
+
+          for (let i = 1; i <= illustrationsLength; i++) {
+            const illustration = illustrations[i - 1];
+            const row = `
+        <tr>
+            <td>
+                <div class="line1">
+                    <div class="id">${selectedShipGirl.name}</div>
+                    <div class="command">${serialNumber++}. ${illustration.nameNoFileExtension}</div>
+                </div>
+                <div class="line2">
+                    <div class="title">${illustration.imgString}</div>
+                </div>
+            </td>
+        </tr>
+      `;
+            tableRows.push(row);
+
+            if ((i % batchSize === 0 || i === illustrationsLength)) {
+              const html = generateTable(tableRows);
+              await page.setContent(html, {waitUntil: 'load'});
+              const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
+              // fs.writeFile('result3.png', imgBuffer, (err) => {
+              //   if (err) throw err;
+              //   logger.success('文件已保存');
+              // });
+              await session.send(h.image(imgBuffer, `image/${imageType}`));
+              tableRows = [];
+            }
+          }
+          await page.close();
+
+          await session.send(`请输入待提取的【立绘名】或【序号】：
+支持输入多个（用空格隔开）
+例如：1 2`)
+          const userInput = await session.prompt()
+          if (!userInput) return `输入超时。`
+          const stringArray = userInput.split(' ');
+
+          for (const element of stringArray) {
+
+            let selectedIllustration: Illustration;
+            if (!isNaN(Number(element))) {
+              const index = parseInt(element);
+              if (index > 0 && index <= illustrations.length) {
+                selectedIllustration = illustrations[index - 1];
+              } else {
+                await session.send(`序号 ${index} 超出范围（1~${illustrations.length}）。`);
+                continue;
+              }
+            } else {
+              selectedIllustration = illustrations.find((illustration) => illustration.nameNoFileExtension === element);
+              if (!selectedIllustration) {
+                await session.send(`未找到立绘：${element}。`);
+                continue;
+              }
+            }
+            await session.send(h.image(selectedIllustration.src))
+            //
+          }
+        });
+      }).on('error', (err) => {
+        logger.error('请求失败：', err.message);
+      });
+      //
+    });
+
+  // 舰娘.语音* jnyy*
+  ctx.command('azurLaneAssistant.舰娘.语音 [indexOrName:text]', '查询舰娘语音')
+    .action(async ({session}, indexOrName) => {
+      if (!indexOrName) {
+        await session.send(`请输入待查询立绘的【舰娘名】或【序号】或【取消】：`);
+        const userInput = await session.prompt();
+        if (!userInput) return `输入超时。`;
+        if (userInput === '取消') return `本次查询已取消。`;
+        indexOrName = userInput;
+      }
+      let selectedShipGirl: ShipGirl;
+      if (!isNaN(Number(indexOrName))) {
+        const index = parseInt(indexOrName);
+        if (index > 0 && index <= shipGirls.length) {
+          selectedShipGirl = shipGirls[index - 1];
+        } else {
+          return `序号 ${index} 超出范围（1~${shipGirls.length}）。`;
+        }
+      } else {
+        selectedShipGirl = shipGirls.find((girl) => girl.name === indexOrName);
+        if (!selectedShipGirl) selectedShipGirl = shipGirls.find((girl) => girl.title === indexOrName);
+        if (!selectedShipGirl) {
+          return `未找到立绘：${indexOrName}。`;
+        }
+      }
+
+      const url = `https://wiki.biligame.com/blhx/${selectedShipGirl.title}`;
+      https.get(url, (res) => {
+        let chunks = [];
+        res.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+        res.on('end', async () => {
+          const buffer = Buffer.concat(chunks);
+          const data = iconv.decode(buffer, 'utf-8');
+          const $ = load(data);
+
+          interface ShipWord {
+            tableName: string;
+            dataKey: string;
+            shipWordLine: string;
+            audioSrc: string;
+          }
+
+          const shipWords: ShipWord[] = [];
+
+          $('div.sm-bar').each((index, element) => {
+            const shipWordLine = $(element).prev('.ship_word_line').text().trim();
+            const audioSrc = $(element).find('.sm-audio-src a').attr('href') || '';
+            const dataKey = $(element).closest('tr').find('th').text().trim();
+            const tableName = $(element).closest('.table-ShipWordsTable').attr('data-title') || '舰船台词';
+
+            const shipWord: ShipWord = {
+              tableName,
+              dataKey,
+              shipWordLine,
+              audioSrc
+            };
+
+            shipWords.push(shipWord);
+          });
+
+          const batchCount = 1
+          const shipWordsLength = shipWords.length;
+          const batchSize = Math.floor(shipWordsLength / batchCount); // 每批处理的数量
+          let serialNumber = 1; // 序号变量
+          let tableRows = [];
+
+          const tableStyle = `
+    <style>
+        body {
+            margin: 0;
+            zoom: 200%;
+        }
+        .list {
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+            overflow: scroll;
+        }
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            height: min-content;
+            border: 1px solid #ddd;
+        }
+        th,
+        td {
+            text-align: left;
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-right: 5px;
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+        }
+        tr:nth-child(even) {
+            background-color: #f5f5f5;
+        }
+        .line1 {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: max-content;
+        }
+        .line2 {
+            display: flex;
+            flex-direction: row;
+            width: max-content;
+        }
+        .id {
+            color: #444444;
+            font-size: x-small;
+            background-color: #f8f8f8;
+            padding: 1px 3px;
+            border-radius: 5px;
+            border-color: #dee2e6;
+            border-style: solid;
+            border-width: 1px;
+            margin-left: 5px;
+        }
+        .command {
+            color: #444444;
+            margin-left: 5px;
+        }
+        .title {
+            color: #6c757d;
+            font-size: xx-small;
+            margin-left: 10px;
+        }
+    </style>
+`;
+
+          const generateTable = (rows: any): string => {
+            return `
+        <html lang="zh">
+          <head>
+            ${tableStyle}
+          <title>舰娘台词</title>
+          </head>
+          <body>
+            <div class="list">
+              <table>
+                ${rows.join('\n')}
+              </table>
+            </div>
+          </body>
+        </html>
+      `;
+          };
+
+          const page = await ctx.puppeteer.page();
+          await page.setViewport({width: 100, height: 100});
+
+          for (let i = 1; i <= shipWordsLength; i++) {
+            const shipWord = shipWords[i - 1];
+            const row = `
+        <tr>
+            <td>
+                <div class="line1">
+                    <div class="id">${selectedShipGirl.name}</div>
+                    <div class="command">${serialNumber++}. ${shipWord.tableName}-${shipWord.dataKey}</div>
+                </div>
+                <div class="line2">
+                    <div class="title">${shipWord.shipWordLine}</div>
+                </div>
+            </td>
+        </tr>
+      `;
+            tableRows.push(row);
+
+            if ((i % batchSize === 0 || i === shipWordsLength)) {
+              const html = generateTable(tableRows);
+              await page.setContent(html, {waitUntil: 'load'});
+              const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
+              // fs.writeFile('result3.png', imgBuffer, (err) => {
+              //   if (err) throw err;
+              //   logger.success('文件已保存');
+              // });
+              await session.send(h.image(imgBuffer, `image/${imageType}`));
+              tableRows = [];
+            }
+          }
+          await page.close();
+
+          await session.send(`请输入待提取的【语音名】或【序号】：
+支持输入多个（用空格隔开）
+例如：1 2`)
+          const userInput = await session.prompt()
+          if (!userInput) return `输入超时。`
+          const stringArray = userInput.split(' ');
+
+          for (const element of stringArray) {
+
+            let selectedShipWord: ShipWord;
+            if (!isNaN(Number(element))) {
+              const index = parseInt(element);
+              if (index > 0 && index <= shipWords.length) {
+                selectedShipWord = shipWords[index - 1];
+              } else {
+                await session.send(`序号 ${index} 超出范围（1~${shipWords.length}）。`);
+                continue;
+              }
+            } else {
+              selectedShipWord = shipWords.find((shipWord) => `${shipWord.tableName}-${shipWord.dataKey}` === element);
+              if (!selectedShipWord) {
+                await session.send(`未找到语音：${element}。`);
+                continue;
+              }
+            }
+            await session.send(h.audio(selectedShipWord.audioSrc))
+            //
+          }
+        });
+      }).on('error', (err) => {
+        logger.error('请求失败：', err.message);
+      });
+      //
+    });
+
+// 装备* zb*
   ctx.command('azurLaneAssistant.装备', '查看装备指令帮助')
     .action(async ({session}) => {
       await session.execute(`azurLaneAssistant.装备 -h`)
     })
 
-  // 装备.列表* zblb*
+// 装备.列表* zblb*
   ctx.command('azurLaneAssistant.装备.列表 [batchCount:number]', '查看装备列表')
     .option('initialize', '-i 初始化装备列表')
     .action(async ({session, options}, batchCount = defaultEquipmentsListBatchCount) => {
@@ -1236,7 +1676,7 @@ export function apply(ctx: Context, config: Config) {
     })
     .execute({options: {initialize: true}})
 
-  // 装备.查询* zbcx*
+// 装备.查询* zbcx*
   ctx.command('azurLaneAssistant.装备.查询 [indexOrName:text]', '查询装备信息')
     .action(async ({session}, indexOrName) => {
       if (!indexOrName) {
@@ -1252,13 +1692,13 @@ export function apply(ctx: Context, config: Config) {
         if (index > 0 && index <= equipments.length) {
           selecteEquipment = equipments[index - 1];
         } else {
-          return `序号超出范围。`;
+          return `序号 ${index} 超出范围（1~${equipments.length}）。`;
         }
       } else {
         selecteEquipment = equipments.find((equipment) => equipment.name === indexOrName);
         if (!selecteEquipment) selecteEquipment = equipments.find((equipment) => equipment.title === indexOrName);
         if (!selecteEquipment) {
-          return `未找到装备。`;
+          return `未找到装备：${indexOrName}。`;
         }
       }
 
@@ -1385,13 +1825,13 @@ export function apply(ctx: Context, config: Config) {
       //
     });
 
-  // 井号碧蓝榜* jhblb*
+// 井号碧蓝榜* jhblb*
   ctx.command('azurLaneAssistant.井号碧蓝榜', '查看井号碧蓝榜指令帮助')
     .action(async ({session}) => {
       await session.execute(`azurLaneAssistant.井号碧蓝榜 -h`)
     })
 
-  // 井号碧蓝榜.列表* jhblblb*
+// 井号碧蓝榜.列表* jhblblb*
   ctx.command('azurLaneAssistant.井号碧蓝榜.列表 [batchCount:number]', '查看井号碧蓝榜列表')
     .option('initialize', '-i 初始化井号碧蓝榜列表')
     .action(async ({session, options}, batchCount = defaultRanksListBatchCount) => {
@@ -1565,7 +2005,7 @@ export function apply(ctx: Context, config: Config) {
     })
     .execute({options: {initialize: true}})
 
-  // 井号碧蓝榜.查询* jhblbcx*
+// 井号碧蓝榜.查询* jhblbcx*
   ctx.command('azurLaneAssistant.井号碧蓝榜.查询 [indexOrName:text]', '查询井号碧蓝榜')
     .action(async ({session}, indexOrName) => {
       if (!indexOrName) {
@@ -1581,12 +2021,12 @@ export function apply(ctx: Context, config: Config) {
         if (index > 0 && index <= ranks.length) {
           selecteRank = ranks[index - 1];
         } else {
-          return `序号超出范围。`;
+          return `序号 ${index} 超出范围（1~${ranks.length}）。`;
         }
       } else {
         selecteRank = ranks.find((rank) => rank.altWithoutExtension === indexOrName);
         if (!selecteRank) {
-          return `未找到榜单。`;
+          return `未找到榜单：${indexOrName}。`;
         }
       }
 
@@ -1594,13 +2034,13 @@ export function apply(ctx: Context, config: Config) {
       //
     });
 
-  // 关卡* gq*
+// 关卡* gq*
   ctx.command('azurLaneAssistant.关卡', '查看关卡指令帮助')
     .action(async ({session}) => {
       await session.execute(`azurLaneAssistant.关卡 -h`)
     })
 
-  // 关卡.总览.列表* gqzllb*
+// 关卡.总览.列表* gqzllb*
   ctx.command('azurLaneAssistant.关卡.总览.列表 [batchCount:number]', '查看关卡总览列表')
     .option('initialize', '-i 初始化关卡列表')
     .action(async ({session, options}, batchCount = defaultStagesListBatchCount) => {
@@ -1778,7 +2218,7 @@ export function apply(ctx: Context, config: Config) {
     })
     .execute({options: {initialize: true}})
 
-  // 关卡.总览.查询* gqzlcx*
+// 关卡.总览.查询* gqzlcx*
   ctx.command('azurLaneAssistant.关卡.总览.查询 [indexOrName:text]', '查询关卡总览信息')
     .action(async ({session}, indexOrName) => {
       if (!indexOrName) {
@@ -1794,14 +2234,14 @@ export function apply(ctx: Context, config: Config) {
         if (index > 0 && index <= stages.length) {
           selectedStage = stages[index - 1];
         } else {
-          return `序号超出范围。`;
+          return `序号 ${index} 超出范围（1~${stages.length}）。`;
         }
       } else {
         selectedStage = stages.find((stage) => stage.altName === indexOrName);
         if (!selectedStage) selectedStage = stages.find((stage) => stage.title === indexOrName);
         if (!selectedStage) selectedStage = stages.find((stage) => stage.name === indexOrName);
         if (!selectedStage) {
-          return `未找到关卡。`;
+          return `未找到关卡：${indexOrName}。`;
         }
       }
 
@@ -1900,7 +2340,7 @@ export function apply(ctx: Context, config: Config) {
       //
     });
 
-  // 关卡.主线.列表* gqzxlb*
+// 关卡.主线.列表* gqzxlb*
   ctx.command('azurLaneAssistant.关卡.主线.列表 [batchCount:number]', '查看主线关卡列表')
     .option('initialize', '-i 初始化关卡列表')
     .action(async ({session, options}, batchCount = defaultStagesListBatchCount) => {
@@ -2039,7 +2479,7 @@ export function apply(ctx: Context, config: Config) {
     })
     .execute({options: {initialize: true}})
 
-  // 关卡.主线.查询* gqzxcx*
+// 关卡.主线.查询* gqzxcx*
   ctx.command('azurLaneAssistant.关卡.主线.查询 [indexOrName:text]', '查询主线关卡信息')
     .action(async ({session}, indexOrName) => {
       if (!indexOrName) {
@@ -2057,13 +2497,13 @@ export function apply(ctx: Context, config: Config) {
         if (index > 0 && index <= manlineStages.length) {
           selectedMainlineStage = manlineStages[index - 1];
         } else {
-          return `序号超出范围。`;
+          return `序号 ${index} 超出范围（1~${manlineStages.length}）。`;
         }
       } else {
         selectedMainlineStage = manlineStages.find((mainlineStage) => mainlineStage.stageNumber === indexOrName);
         if (!selectedMainlineStage) selectedMainlineStage = manlineStages.find((mainlineStage) => mainlineStage.stageName === indexOrName);
         if (!selectedMainlineStage) {
-          return `未找到关卡。`;
+          return `未找到关卡：${indexOrName}。`;
         }
       }
 
@@ -2190,13 +2630,13 @@ export function apply(ctx: Context, config: Config) {
       //
     });
 
-  // 攻略* gl*
+// 攻略* gl*
   ctx.command('azurLaneAssistant.攻略', '查看攻略指令帮助')
     .action(async ({session}) => {
       await session.execute(`azurLaneAssistant.攻略 -h`)
     })
 
-  // 攻略.月度BOSS解析* glyd*
+// 攻略.月度BOSS解析* glyd*
   ctx.command('azurLaneAssistant.攻略.月度BOSS解析', '查看月度BOSS解析攻略')
     .action(async ({session}) => {
 
@@ -2233,7 +2673,7 @@ export function apply(ctx: Context, config: Config) {
       //
     });
 
-  // 攻略.余烬BOSS攻略要点* 攻略.METAboss攻略要点* glyj*
+// 攻略.余烬BOSS攻略要点* 攻略.METAboss攻略要点* glyj*
   ctx.command('azurLaneAssistant.攻略.余烬BOSS攻略要点', '查看余烬BOSS攻略要点')
     .action(async ({session}) => {
 
@@ -2273,4 +2713,13 @@ export function apply(ctx: Context, config: Config) {
       await page.close()
       //
     });
+}
+
+function removeFileExtension(filename: string): string {
+  const lastDotIndex = filename.lastIndexOf('.');
+  if (lastDotIndex === -1) {
+    return filename; // 如果文件名中没有点，则返回原文件名
+  } else {
+    return filename.substring(0, lastDotIndex); // 返回去除后缀名的文件名部分
+  }
 }
