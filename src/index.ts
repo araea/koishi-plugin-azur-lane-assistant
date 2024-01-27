@@ -7,7 +7,6 @@ import {} from 'koishi-plugin-markdown-to-image-service'
 import {load} from "cheerio";
 import iconv from "iconv-lite";
 import * as fs from "fs";
-import {next} from "cheerio/lib/api/traversing";
 
 export const inject = {
   required: ['puppeteer'],
