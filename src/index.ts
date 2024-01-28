@@ -629,70 +629,67 @@ export function apply(ctx: Context, config: Config) {
 
         response.on('end', async () => {
           const jsonData = JSON.parse(data);
-          const items = jsonData.data.items;
-          if (items.length > 0) {
-            const pics = items[0]?.modules?.module_dynamic?.major?.draw?.items || [];
-            const text = items[0]?.modules?.module_dynamic?.desc?.text || "";
+          const items = jsonData.data.items || [];
+          const firstItem = items[0] || {};
+          const pics = firstItem.modules?.module_dynamic?.major?.draw?.items || [];
+          const text = firstItem.modules?.module_dynamic?.desc?.text || "";
 
-            // logger.info('Pics:', pics);
-            // logger.info('Text:', text);
+          // logger.info('Pics:', pics);
+          // logger.info('Text:', text);
 
-            let result = `${shouldConvertTextToImage ? text.replace(/#/, '# #') : text}\n\n`;
-            pics.forEach((pic, index) => {
-              // result += `![pic${index + 1}](${pic.url})\n\n`;
-              result += shouldConvertTextToImage ? `![pic${index + 1}](${pic.src})\n\n` : `${h.image(pic.src)}\n\n`;
-            });
-            result = result.trim();
-            if (shouldIncludeTimeInDynamicPush) {
-              const currentTime: Date = new Date();
-              const beijingTime: string = currentTime.toLocaleString("zh-CN", {timeZone: "Asia/Shanghai"});
-              result = shouldConvertTextToImage ? `# ${beijingTime}\n\n${result}` : `${beijingTime}\n\n${result}`;
-            }
-            if (shouldConvertTextToImage) {
-              const lines = result.split('\n');
-              result = lines
-                .map((line) => (line.trim() !== '' && line[0] !== '#' ? `## ${line}` : line))
-                .join('\n');
-            }
-            // logger.info(result);
-            // 如果 text 变了，说明动态更新了
-            let isPush: boolean = false
-            if (text !== lastText) {
-              // 遍历 bots 获取 bot 信息，以便发送信息
-              for (const currentBot of ctx.bots) {
-                // 遍历 pushGroupIDs 字符串数组 为每一个群组发送动态推送
-                for (const groupId of pushGroupIDs) {
-                  if (isInitialOfficialAccountUpdate || requestedCount !== 0) {
-                    isPush = true
-                    if (shouldConvertTextToImage) {
-                      const imageBuffer = await ctx.markdownToImage.convertToImage(result)
-                      await currentBot.sendMessage(groupId, h.image(imageBuffer, `image/${imageType}`));
-                    } else {
-                      await currentBot.sendMessage(groupId, result);
-                    }
-                  }
-                }
-                for (const userId of pushUserIDs) {
-                  if (isInitialOfficialAccountUpdate || requestedCount !== 0) {
-                    isPush = true
-                    const channel = await currentBot.createDirectChannel(userId)
-                    if (shouldConvertTextToImage) {
-                      const imageBuffer = await ctx.markdownToImage.convertToImage(result)
-                      await currentBot.sendMessage(channel.id, h.image(imageBuffer, `image/${imageType}`));
-                    } else {
-                      await currentBot.sendMessage(channel.id, result);
-                    }
+          let result = `${shouldConvertTextToImage ? text.replace(/#/, '# #') : text}\n\n`;
+          pics.forEach((pic, index) => {
+            // result += `![pic${index + 1}](${pic.url})\n\n`;
+            result += shouldConvertTextToImage ? `![pic${index + 1}](${pic.src})\n\n` : `${h.image(pic.src)}\n\n`;
+          });
+          result = result.trim();
+          if (shouldIncludeTimeInDynamicPush) {
+            const currentTime: Date = new Date();
+            const beijingTime: string = currentTime.toLocaleString("zh-CN", {timeZone: "Asia/Shanghai"});
+            result = shouldConvertTextToImage ? `# ${beijingTime}\n\n${result}` : `${beijingTime}\n\n${result}`;
+          }
+          if (shouldConvertTextToImage) {
+            const lines = result.split('\n');
+            result = lines
+              .map((line) => (line.trim() !== '' && line[0] !== '#' ? `## ${line}` : line))
+              .join('\n');
+          }
+          // logger.info(result);
+          // 如果 text 变了，说明动态更新了
+          let isPush: boolean = false
+          if (text !== lastText) {
+            // 遍历 bots 获取 bot 信息，以便发送信息
+            for (const currentBot of ctx.bots) {
+              // 遍历 pushGroupIDs 字符串数组 为每一个群组发送动态推送
+              for (const groupId of pushGroupIDs) {
+                if (isInitialOfficialAccountUpdate || requestedCount !== 0) {
+                  isPush = true
+                  if (shouldConvertTextToImage) {
+                    const imageBuffer = await ctx.markdownToImage.convertToImage(result)
+                    await currentBot.sendMessage(groupId, h.image(imageBuffer, `image/${imageType}`));
+                  } else {
+                    await currentBot.sendMessage(groupId, result);
                   }
                 }
               }
-              lastText = text;
-              if (isPush === true) logger.success(`最新动态推送成功！`)
+              for (const userId of pushUserIDs) {
+                if (isInitialOfficialAccountUpdate || requestedCount !== 0) {
+                  isPush = true
+                  const channel = await currentBot.createDirectChannel(userId)
+                  if (shouldConvertTextToImage) {
+                    const imageBuffer = await ctx.markdownToImage.convertToImage(result)
+                    await currentBot.sendMessage(channel.id, h.image(imageBuffer, `image/${imageType}`));
+                  } else {
+                    await currentBot.sendMessage(channel.id, result);
+                  }
+                }
+              }
             }
-
-            ++requestedCount
-          } else {
-            logger.error('返回数据中没有 items，请检查配置项是否填写正确！');
+            lastText = text;
+            if (isPush === true) logger.success(`最新动态推送成功！`)
           }
+
+          ++requestedCount
         });
       }).on('error', (err) => {
         logger.error('发生错误：', err);
