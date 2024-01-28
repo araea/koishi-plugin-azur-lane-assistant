@@ -694,7 +694,7 @@ export function apply(ctx: Context, config: Config) {
 
             ++requestedCount
           } else {
-            logger.error('返回数据中没有 items，请检查配置项是否填写正确！');
+            // logger.error('返回数据中没有 items，正在等待动态更新！');
           }
         });
       }).on('error', (err) => {
