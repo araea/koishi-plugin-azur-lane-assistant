@@ -635,13 +635,18 @@ export function apply(ctx: Context, config: Config) {
           const jsonData = JSON.parse(data);
           // logger.info('jsonData:', jsonData);
           const items = jsonData.data?.items || [];
+
           // logger.info('items:', items);
-          // fs.writeFile('items.json',  JSON.stringify(items), (err) => {
+          // fs.writeFile('items.json', JSON.stringify(items), (err) => {
           //   if (err) throw err;
-          //   logger.success('文件已保存');
+          //   logger.success('items.json 文件已保存');
           // });
+
           if (items.length > 0) {
-            const firstItem = items[0] || {};
+            const firstItem = items.find(item => (item?.modules?.module_tag?.text ?? "") !== "置顶") || null;
+
+            // logger.info('firstItem:', firstItem);
+
             const modules = firstItem.modules?.module_dynamic || {};
             const major = modules.major || {};
             const desc = major.archive?.desc || "";
