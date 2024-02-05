@@ -58,6 +58,7 @@ export interface Config {
   isBilibiliAzurLaneOfficialDynamicPushEnabled: boolean
   buvid3: string
   shouldIncludeTimeInDynamicPush: boolean
+  shouldIncludeAzurLaneBilibiliLinkAfterPush: boolean
   isInitialOfficialAccountUpdate: boolean
   shouldConvertTextToImage: boolean
   pushRequestIntervalSeconds: number
@@ -80,6 +81,7 @@ export const Config: Schema<Config> = Schema.intersect([
       isBilibiliAzurLaneOfficialDynamicPushEnabled: Schema.const(true).required(),
       buvid3: Schema.string().description('哔哩哔哩 Cookie 中 buvid3 的值。'),
       shouldIncludeTimeInDynamicPush: Schema.boolean().default(true).description('是否在推送动态的时候加上时间信息。'),
+      shouldIncludeAzurLaneBilibiliLinkAfterPush: Schema.boolean().default(true).description('是否在推送动态的时候加上时间信息。'),
       isInitialOfficialAccountUpdate: Schema.boolean().default(false).description('是否在第一次发送碧蓝航线官方账号当前最新的动态。'),
       shouldConvertTextToImage: Schema.boolean().default(false).description('是否将推送的动态文本转换成图片（可选），如需启用，需要启用 \`markdownToImage\` 服务。'),
       pushRequestIntervalSeconds: Schema.number().default(60).description('监听动态的请求间隔，单位是秒。'),
@@ -102,6 +104,7 @@ export function apply(ctx: Context, config: Config) {
     isBilibiliAzurLaneOfficialDynamicPushEnabled,
     buvid3,
     shouldIncludeTimeInDynamicPush,
+    shouldIncludeAzurLaneBilibiliLinkAfterPush,
     isInitialOfficialAccountUpdate,
     shouldConvertTextToImage,
     pushRequestIntervalSeconds,
@@ -703,7 +706,7 @@ export function apply(ctx: Context, config: Config) {
                     isPush = true;
                     if (shouldConvertTextToImage) {
                       const imageBuffer = await ctx.markdownToImage.convertToImage(result);
-                      await currentBot.sendMessage(groupId, h.image(imageBuffer, `image/${imageType}`));
+                      await currentBot.sendMessage(groupId, `${h.image(imageBuffer, `image/${imageType}`)}${shouldIncludeAzurLaneBilibiliLinkAfterPush ? '\nhttps://space.bilibili.com/233114659/dynamic' : ''}`);
                     } else {
                       await currentBot.sendMessage(groupId, result);
                     }
@@ -715,7 +718,7 @@ export function apply(ctx: Context, config: Config) {
                     const channel = await currentBot.createDirectChannel(userId);
                     if (shouldConvertTextToImage) {
                       const imageBuffer = await ctx.markdownToImage.convertToImage(result);
-                      await currentBot.sendMessage(channel.id, h.image(imageBuffer, `image/${imageType}`));
+                      await currentBot.sendMessage(channel.id, `${h.image(imageBuffer, `image/${imageType}`)}${shouldIncludeAzurLaneBilibiliLinkAfterPush ? '\nhttps://space.bilibili.com/233114659/dynamic' : ''}`);
                     } else {
                       await currentBot.sendMessage(channel.id, result);
                     }

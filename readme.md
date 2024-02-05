@@ -20,7 +20,8 @@
 
 - 需要确保先启动 Puppeteer 服务以正常运行插件。
 
-- 如需启用官方动态推送功能，需要提供您的哔哩哔哩 Cookie 中的 buvid3 值（需登录获取 - [获取教程](https://forum.koishi.xyz/t/topic/6427/11)）。
+- 如需启用官方动态推送功能，需要提供您的哔哩哔哩 Cookie 中的 buvid3
+  值（需登录获取 - [获取教程](https://forum.koishi.xyz/t/topic/6427/11)）。
 
 - 有些长图偶尔会因为长度过长而出现无法预期的 bug，这种情况下，重试即可解决。
 
@@ -36,6 +37,7 @@
 - `isBilibiliAzurLaneOfficialDynamicPushEnabled`：是否启用哔哩哔哩碧蓝航线官方的动态推送功能。
   - `buvid3`：哔哩哔哩 Cookie 中的 buvid3 的值。
   - `shouldIncludeTimeInDynamicPush`：是否在推送动态的时候加上时间信息。
+  - `shouldIncludeAzurLaneBilibiliLinkAfterPush`：是否在每次推送后添加碧蓝航线B站官方动态页面链接。
   - `isInitialOfficialAccountUpdate`：是否在第一次发送碧蓝航线官方账号当前最新的动态。
   - `shouldConvertTextToImage`：是否将推送的动态文本转换成图片（可选），如需启用，需要启用 `markdownToImage` 服务。
   - `pushRequestIntervalSeconds`：如果启用，则可以设置监听推送的请求间隔，单位是秒，默认为 `60`。
