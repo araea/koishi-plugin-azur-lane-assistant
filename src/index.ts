@@ -732,7 +732,7 @@ export function apply(ctx: Context, config: Config) {
           }
         });
       }).on('error', (err) => {
-        logger.error('发生错误：', err);
+        logger.error('发生错误，请手动偷瞄一次碧蓝航线B站官方动态页（https://space.bilibili.com/233114659/dynamic）：', err);
       });
     }
 
