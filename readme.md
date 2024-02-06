@@ -29,32 +29,43 @@
 
 ## ⚙️ 配置项
 
-- `defaultShipGirlsListBatchCount`：发送舰娘列表的默认批次数，最大值为 `10`。
-- `defaultEquipmentsListBatchCount`：发送装备列表的默认批次数，最大值为 `10`。
-- `defaultRanksListBatchCount`：发送井号碧蓝榜列表的默认批次数，最大值为 `5`。
+### 发送列表默认批次数
+
+- `defaultShipGirlsListBatchCount`：舰娘列表，最大值为 `10`。
+- `defaultEquipmentsListBatchCount`：装备列表，最大值为 `10`。
+- `defaultRanksListBatchCount`：井号碧蓝榜列表，最大值为 `5`。
+- `defaultStagesListBatchCount`：关卡列表，最大值为 `10`。
+
+### 图片发送设置
+
 - `imageType`：发送的图片类型。
 
+### 哔哩哔哩碧蓝航线官方动态推送设置
+
 - `isBilibiliAzurLaneOfficialDynamicPushEnabled`：是否启用哔哩哔哩碧蓝航线官方的动态推送功能。
-  - `buvid3`：哔哩哔哩 Cookie 中的 buvid3 的值。
-  - `shouldIncludeTimeInDynamicPush`：是否在推送动态的时候加上时间信息。
-  - `shouldIncludeAzurLaneBilibiliLinkAfterPush`：是否在每次推送后添加碧蓝航线B站官方动态页面链接。
-  - `isInitialOfficialAccountUpdate`：是否在第一次发送碧蓝航线官方账号当前最新的动态。
-  - `shouldConvertTextToImage`：是否将推送的动态文本转换成图片（可选），如需启用，需要启用 `markdownToImage` 服务。
-  - `pushRequestIntervalSeconds`：如果启用，则可以设置监听推送的请求间隔，单位是秒，默认为 `60`。
-  - `pushGroupIDs`：启用推送的群组IDs。
-  - `pushUserIDs`：启用推送的用户IDs（需要是好友）。
+- `buvid3`：哔哩哔哩 Cookie 中的 buvid3 的值。
+- `shouldIncludeTimeInDynamicPush`：在推送动态的时候是否加上时间信息。
+- `shouldIncludeAzurLaneBilibiliLinkAfterPush`：在每次推送后是否添加碧蓝航线B站官方动态页面链接。
+- `isInitialOfficialAccountUpdate`：在第一次发送碧蓝航线官方账号当前最新的动态时是否启用。
+- `shouldConvertTextToImage`：是否将推送的动态文本转换成图片（可选），如需启用，需要启用 `markdownToImage` 服务。
+- `pushRequestIntervalSeconds`：如果启用，则可以设置监听推送的请求间隔，单位是秒，默认为 `60`。
+- `pushGroupIDs`：启用推送的频道IDs。
+- `pushUserIDs`：启用推送的用户IDs（需要是好友）。
 
 ## 🌼 指令
 
 ### azurlaneassistant
+
 - `azurlaneassistant` - 查看使用帮助
 
 ### 攻略
+
 - `azurlaneassistant.攻略` - 攻略相关指令
   - `azurlaneassistant.攻略.余烬boss攻略要点` - 查看余烬boss攻略要点
   - `azurlaneassistant.攻略.月度boss解析` - 查看月度boss解析
 
 ### 关卡
+
 - `azurlaneassistant.关卡` - 关卡相关指令
   - `azurlaneassistant.关卡.主线` - 主线关卡相关指令
     - `azurlaneassistant.关卡.主线.查询` - 查询主线关卡
@@ -64,6 +75,7 @@
     - `azurlaneassistant.关卡.总览.列表` - 查看关卡总览列表
 
 ### 舰娘
+
 - `azurlaneassistant.舰娘` - 舰娘相关指令
   - `azurlaneassistant.舰娘.查询` - 查询舰娘信息
   - `azurlaneassistant.舰娘.立绘` - 查看舰娘立绘
@@ -71,11 +83,13 @@
   - `azurlaneassistant.舰娘.语音` - 获取舰娘语音信息
 
 ### 井号碧蓝榜
+
 - `azurlaneassistant.井号碧蓝榜` - 井号碧蓝榜相关指令
   - `azurlaneassistant.井号碧蓝榜.查询` - 查询井号碧蓝榜信息
   - `azurlaneassistant.井号碧蓝榜.列表` - 查看井号碧蓝榜列表
 
 ### 装备
+
 - `azurlaneassistant.装备` - 装备相关指令
   - `azurlaneassistant.装备.查询` - 查询装备信息
   - `azurlaneassistant.装备.列表` - 查看装备列表

@@ -83,10 +83,13 @@ export const Config: Schema<Config> = Schema.intersect([
     defaultEquipmentsListBatchCount: Schema.number().min(1).max(10).default(5).description(`发送装备列表的默认批次数，最大值为 \`10\`。`),
     defaultRanksListBatchCount: Schema.number().min(1).max(5).default(1).description(`发送井号碧蓝榜列表的默认批次数，最大值为 \`5\`。`),
     defaultStagesListBatchCount: Schema.number().min(1).max(10).default(5).description(`发送关卡列表的默认批次数，最大值为 \`10\`。`),
-    // isConsolePromptEnabled: Schema.boolean().default(true).description('是否在控制台打印提示信息。'),
+  }).description('发送列表默认批次数'),
+  Schema.object({
     imageType: Schema.union(['png', 'jpeg', 'webp']).default('png').description(`发送的图片类型。`),
+  }).description('图片发送设置'),
+  Schema.object({
     isBilibiliAzurLaneOfficialDynamicPushEnabled: Schema.boolean().default(false).description('是否启用哔哩哔哩碧蓝航线官方的动态推送功能。'),
-  }).description('基础配置'),
+  }).description('哔哩哔哩碧蓝航线官方动态推送设置'),
   Schema.union([
     Schema.object({
       isBilibiliAzurLaneOfficialDynamicPushEnabled: Schema.const(true).required(),
@@ -96,7 +99,7 @@ export const Config: Schema<Config> = Schema.intersect([
       isInitialOfficialAccountUpdate: Schema.boolean().default(false).description('是否在第一次发送碧蓝航线官方账号当前最新的动态。'),
       shouldConvertTextToImage: Schema.boolean().default(false).description('是否将推送的动态文本转换成图片（可选），如需启用，需要启用 \`markdownToImage\` 服务。'),
       pushRequestIntervalSeconds: Schema.number().default(60).description('监听动态的请求间隔，单位是秒。'),
-      pushGroupIDs: Schema.array(String).role('table').description('启用推送的群组IDs。'),
+      pushGroupIDs: Schema.array(String).role('table').description('启用推送的频道IDs。'),
       pushUserIDs: Schema.array(String).role('table').description('启用推送的用户IDs（需要是好友）。'),
     }),
     Schema.object({}),
