@@ -43,14 +43,14 @@
 ### 哔哩哔哩碧蓝航线官方动态推送设置
 
 - `isBilibiliAzurLaneOfficialDynamicPushEnabled`：是否启用哔哩哔哩碧蓝航线官方的动态推送功能。
-- `buvid3`：哔哩哔哩 Cookie 中的 buvid3 的值。
-- `shouldIncludeTimeInDynamicPush`：在推送动态的时候是否加上时间信息。
-- `shouldIncludeAzurLaneBilibiliLinkAfterPush`：在每次推送后是否添加碧蓝航线B站官方动态页面链接。
-- `isInitialOfficialAccountUpdate`：在第一次发送碧蓝航线官方账号当前最新的动态时是否启用。
-- `shouldConvertTextToImage`：是否将推送的动态文本转换成图片（可选），如需启用，需要启用 `markdownToImage` 服务。
-- `pushRequestIntervalSeconds`：如果启用，则可以设置监听推送的请求间隔，单位是秒，默认为 `60`。
-- `pushGroupIDs`：启用推送的频道IDs。
-- `pushUserIDs`：启用推送的用户IDs（需要是好友）。
+  - `buvid3`：哔哩哔哩 Cookie 中的 buvid3 的值。
+  - `shouldIncludeTimeInDynamicPush`：在推送动态的时候是否加上时间信息。
+  - `shouldIncludeAzurLaneBilibiliLinkAfterPush`：在每次推送后是否添加碧蓝航线B站官方动态页面链接。
+  - `isInitialOfficialAccountUpdate`：在第一次发送碧蓝航线官方账号当前最新的动态时是否启用。
+  - `shouldConvertTextToImage`：是否将推送的动态文本转换成图片（可选），如需启用，需要启用 `markdownToImage` 服务。
+  - `pushRequestIntervalSeconds`：如果启用，则可以设置监听推送的请求间隔，单位是秒，默认为 `60`。
+  - `pushGroupIDs`：启用推送的频道IDs。
+  - `pushUserIDs`：启用推送的用户IDs（需要是好友）。
 
 ## 🌼 指令
 
