@@ -95,7 +95,7 @@ export const Config: Schema<Config> = Schema.intersect([
       isBilibiliAzurLaneOfficialDynamicPushEnabled: Schema.const(true).required(),
       buvid3: Schema.string().description('哔哩哔哩 Cookie 中 buvid3 的值。'),
       shouldIncludeTimeInDynamicPush: Schema.boolean().default(true).description('是否在推送动态的时候加上时间信息。'),
-      shouldIncludeAzurLaneBilibiliLinkAfterPush: Schema.boolean().default(true).description('是否在推送动态的时候加上时间信息。'),
+      shouldIncludeAzurLaneBilibiliLinkAfterPush: Schema.boolean().default(true).description('在每次推送后是否添加碧蓝航线B站官方动态页面链接。'),
       isInitialOfficialAccountUpdate: Schema.boolean().default(false).description('是否在第一次发送碧蓝航线官方账号当前最新的动态。'),
       shouldConvertTextToImage: Schema.boolean().default(false).description('是否将推送的动态文本转换成图片（可选），如需启用，需要启用 \`markdownToImage\` 服务。'),
       pushRequestIntervalSeconds: Schema.number().default(60).description('监听动态的请求间隔，单位是秒。'),
