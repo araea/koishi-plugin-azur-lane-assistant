@@ -1343,7 +1343,7 @@ export function apply(ctx: Context, config: Config) {
         selectedShipGirl = shipGirls.find((girl) => girl.name === indexOrName);
         if (!selectedShipGirl) selectedShipGirl = shipGirls.find((girl) => girl.title === indexOrName);
         if (!selectedShipGirl) {
-          return `未找到立绘：${indexOrName}。`;
+          return `未找到语音：${indexOrName}。`;
         }
       }
 
