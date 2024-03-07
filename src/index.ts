@@ -952,7 +952,9 @@ export function apply(ctx: Context, config: Config) {
       `;
           };
 
-          const page = await ctx.puppeteer.page();
+          const browser = ctx.puppeteer.browser
+          const context = await browser.createBrowserContext()
+          const page = await context.newPage()
           await page.setViewport({width: 100, height: 100});
 
           for (let i = 1; i <= shipGirlsLength; i++) {
@@ -1252,7 +1254,9 @@ export function apply(ctx: Context, config: Config) {
       `;
           };
 
-          const page = await ctx.puppeteer.page();
+          const browser = ctx.puppeteer.browser
+          const context = await browser.createBrowserContext()
+          const page = await context.newPage()
           await page.setViewport({width: 100, height: 100});
 
           for (let i = 1; i <= illustrationsLength; i++) {
@@ -1473,7 +1477,9 @@ export function apply(ctx: Context, config: Config) {
       `;
           };
 
-          const page = await ctx.puppeteer.page();
+          const browser = ctx.puppeteer.browser
+          const context = await browser.createBrowserContext()
+          const page = await context.newPage()
           await page.setViewport({width: 100, height: 100});
 
           for (let i = 1; i <= shipWordsLength; i++) {
@@ -1686,7 +1692,9 @@ export function apply(ctx: Context, config: Config) {
       `;
           };
 
-          const page = await ctx.puppeteer.page();
+          const browser = ctx.puppeteer.browser
+          const context = await browser.createBrowserContext()
+          const page = await context.newPage()
           await page.setViewport({width: 100, height: 100});
 
           for (let i = 1; i <= equipmentsLength; i++) {
@@ -1859,7 +1867,9 @@ export function apply(ctx: Context, config: Config) {
 </html>
 `
 
-            const page = await ctx.puppeteer.page();
+            const browser = ctx.puppeteer.browser
+            const context = await browser.createBrowserContext()
+            const page = await context.newPage()
 
             await page.setViewport({width: 888, height: 0, deviceScaleFactor: 1});
 
@@ -2016,7 +2026,9 @@ export function apply(ctx: Context, config: Config) {
       `;
           };
 
-          const page = await ctx.puppeteer.page();
+          const browser = ctx.puppeteer.browser
+          const context = await browser.createBrowserContext()
+          const page = await context.newPage()
           await page.setViewport({width: 100, height: 100});
 
           for (let i = 1; i <= ranksLength; i++) {
@@ -2227,7 +2239,9 @@ export function apply(ctx: Context, config: Config) {
       `;
           };
 
-          const page = await ctx.puppeteer.page();
+          const browser = ctx.puppeteer.browser
+          const context = await browser.createBrowserContext()
+          const page = await context.newPage()
           await page.setViewport({width: 100, height: 100});
 
           for (let i = 1; i <= stagesLength; i++) {
@@ -2495,7 +2509,9 @@ export function apply(ctx: Context, config: Config) {
       `;
       };
 
-      const page = await ctx.puppeteer.page();
+      const browser = ctx.puppeteer.browser
+      const context = await browser.createBrowserContext()
+      const page = await context.newPage()
       await page.setViewport({width: 100, height: 100});
 
       for (let i = 1; i <= manlineStagesLength; i++) {
@@ -2661,7 +2677,9 @@ export function apply(ctx: Context, config: Config) {
 </html>
 `
 
-            const page = await ctx.puppeteer.page();
+            const browser = ctx.puppeteer.browser
+            const context = await browser.createBrowserContext()
+            const page = await context.newPage()
 
             await page.setViewport({width: 0, height: 0, deviceScaleFactor: 1});
 
