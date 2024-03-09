@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-azur-lane-assistant",
   "description": "碧蓝航线小助手，提供碧蓝航线在B站的官方动态推送，舰船、装备图鉴以及井号榜查询等功能。🚢",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -40,7 +40,7 @@
     "blhx"
   ],
   "peerDependencies": {
-    "koishi": "^4.16.8"
+    "koishi": "^4.17.2"
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
@@ -48,6 +48,6 @@
   },
   "devDependencies": {
     "koishi-plugin-markdown-to-image-service": "^1.0.5",
-    "koishi-plugin-puppeteer": "^3.7.3"
+    "koishi-plugin-puppeteer": "^3.8.2"
   }
 }

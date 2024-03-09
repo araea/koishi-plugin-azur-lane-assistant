@@ -991,6 +991,7 @@ export function apply(ctx: Context, config: Config) {
           }
           if (options.initialize) logger.success(`舰娘列表初始化成功！`)
           await page.close();
+          await context.close()
         });
 
       }).on("error", (error) => {
@@ -1289,6 +1290,7 @@ export function apply(ctx: Context, config: Config) {
             }
           }
           await page.close();
+          await context.close()
 
           await session.send(`请输入待提取的【立绘名】或【序号】：
 支持输入多个（用空格隔开）
@@ -1512,6 +1514,7 @@ export function apply(ctx: Context, config: Config) {
             }
           }
           await page.close();
+          await context.close()
 
           await session.send(`请输入待提取的【语音名】或【序号】：
 支持输入多个（用空格隔开）
@@ -1730,6 +1733,7 @@ export function apply(ctx: Context, config: Config) {
           }
           if (options.initialize) logger.success(`装备列表初始化成功！`)
           await page.close();
+          await context.close()
         });
 
       }).on("error", (error) => {
@@ -1878,6 +1882,7 @@ export function apply(ctx: Context, config: Config) {
             const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
 
             await page.close();
+            await context.close()
             await session.send(h.image(imgBuffer, `image/${imageType}`))
 
           } else {
@@ -2062,6 +2067,7 @@ export function apply(ctx: Context, config: Config) {
           }
           if (options.initialize) logger.success(`井号碧蓝榜列表初始化成功！`)
           await page.close();
+          await context.close()
         });
 
       }).on("error", (error) => {
@@ -2277,6 +2283,7 @@ export function apply(ctx: Context, config: Config) {
           }
           if (options.initialize) logger.success(`关卡总览列表初始化成功！`)
           await page.close();
+          await context.close()
         });
 
       }).on("error", (error) => {
@@ -2545,6 +2552,7 @@ export function apply(ctx: Context, config: Config) {
       }
       if (options.initialize) logger.success(`主线关卡列表初始化成功！`)
       await page.close();
+      await context.close()
 
       //
     })
@@ -2688,6 +2696,7 @@ export function apply(ctx: Context, config: Config) {
             const imgBuffer = await page.screenshot({fullPage: true, type: imageType});
 
             await page.close();
+            await context.close()
             await session.send(h.image(imgBuffer, `image/${imageType}`))
             // fs.writeFile(`stageImage.${imageType}`, imgBuffer, (err) => {
             //   if (err) throw err;
