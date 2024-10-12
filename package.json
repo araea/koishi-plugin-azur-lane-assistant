@@ -1,22 +1,53 @@
 {
   "name": "koishi-plugin-azur-lane-assistant",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Koishi 的碧蓝航线小助手插件。查询舰娘、装备、井号榜等。",
+  "version": "1.2.9",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
     "dist"
   ],
+  "koishi": {
+    "service": {
+      "required": [
+        "puppeteer"
+      ],
+      "optional": [
+        "markdownToImage"
+      ]
+    }
+  },
   "license": "MIT",
-  "scripts": {},
+  "author": "Nawyjx <3373167460@qq.com>",
+  "homepage": "https://www.npmjs.com/package/koishi-plugin-azur-lane-assistant?activeTab=readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/araea/koishi-plugin-azur-lane-assistant.git"
+  },
   "keywords": [
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "azur-lane",
+    "碧蓝航线",
+    "小助手",
+    "碧蓝航线百科",
+    "碧蓝航线小助手",
+    "动态推送",
+    "wiki",
+    "Azur Lane",
+    "blhx"
   ],
-  "devDependencies": {},
   "peerDependencies": {
-    "koishi": "^4.18.0"
+    "koishi": "^4.17.5"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "koishi-plugin-markdown-to-image-service": "^1.0.5",
+    "koishi-plugin-puppeteer": "^3.8.4"
   }
 }
